@@ -19,14 +19,11 @@ module FFMPEG
 
       @path = path
 
-      if @path.end_with?('.m3u8')
-        optional_arguements = ' -allowed_extensions ALL'
-      else
-        optional_arguements = ''
-      end
+      optional_arguments = ' -analyzeduration 10000000 -probesize 10000000'
+      optional_arguments += ' -allowed_extensions ALL' if @path.end_with?('.m3u8')
 
       # ffmpeg will output to stderr
-      command = "#{FFMPEG.ffprobe_binary}#{optional_arguements} -i #{Shellwords.escape(path)} -print_format json -show_format -show_streams -show_error"
+      command = "#{FFMPEG.ffprobe_binary}#{optional_arguments} -i #{Shellwords.escape(path)} -print_format json -show_format -show_streams -show_error"
       std_output = ''
       std_error = ''
 

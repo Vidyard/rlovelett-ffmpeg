@@ -13,12 +13,13 @@ module FFMPEG
 
       # codecs should go before the presets so that the files will be matched successfully
       # all other parameters go after so that we can override whatever is in the preset
+      analyze = params.select { |p| p =~ /\-analyzeduration|\-probesize/ }
       input   = params.select { |p| p =~ /^\-i / }
-      seek    = params.select {|p| p =~ /\-ss/ }
+      seek    = params.select { |p| p =~ /\-ss/ }
       codecs  = params.select { |p| p =~ /codec/ }
       presets = params.select { |p| p =~ /\-.pre/ }
       other   = params - codecs - presets - input - seek
-      params  = seek + input + codecs + presets + other
+      params  = analyze + seek + input + codecs + presets + other
 
       params_string = params.join(" ")
       params_string << " #{convert_aspect(calculate_aspect)}" if calculate_aspect?
