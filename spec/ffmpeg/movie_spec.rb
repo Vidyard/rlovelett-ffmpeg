@@ -84,6 +84,20 @@ module FFMPEG
         end
       end
 
+      context "given video with no duration" do
+        it 'should not be zero duration' do
+          ffprobe_fake_output = File.read("#{fixture_path}/outputs/file_missing_duration.txt")
+          ffprobe_spawn_double = double(:out => ffprobe_fake_output, :err => '')
+          expect(POSIX::Spawn::Child).to receive(:new).and_return(ffprobe_spawn_double)
+          ffmpeg_fake_output = File.read("#{fixture_path}/outputs/file_null_encoded.txt")
+          ffmpeg_spawn_double = double(:out => '', :err => ffmpeg_fake_output)
+          expect(POSIX::Spawn::Child).to receive(:new).and_return(ffmpeg_spawn_double)
+          @movie = Movie.new(__FILE__)
+
+          expect(@movie.duration).to eq(222.65)
+        end
+      end
+
       context "given an empty flv file (could not find codec parameters)" do
         before(:all) do
           @movie = Movie.new("#{fixture_path}/movies/empty.flv")

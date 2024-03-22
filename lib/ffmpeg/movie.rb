@@ -132,6 +132,8 @@ module FFMPEG
         end
       end
 
+      @duration = manually_extract_duration if @duration.nil? || @duration.zero?
+
       unsupported_stream_ids = unsupported_streams(std_error)
       nil_or_unsupported = ->(stream) { stream.nil? || unsupported_stream_ids.include?(stream[:index]) }
 
@@ -148,6 +150,24 @@ module FFMPEG
           std_error: std_error
         )
       end
+    end
+
+    # Run null encoding output to get actual duration if none provided
+    def manually_extract_duration
+      command = "#{ffmpeg_command} -i #{@paths.first} -v quiet -stats -f null -"
+      spawn = POSIX::Spawn::Child.new(command)
+
+      # outputs to std error
+      std_error = spawn.err
+      fix_encoding(std_error)
+
+      string_duration = std_error.scan(/time=(\d+:\d+:\d+\.\d+)/).last.first
+
+      return string_duration.split(':').map(&:to_f).inject(0) { |a, b| a * 60 + b }
+    rescue Exception => e
+      FFMPEG.logger.error("Failed to extract duration from #{@paths.first}")
+      FFMPEG.logger.error(e)
+      return 0
     end
 
     def ffprobe_command
