@@ -2,10 +2,13 @@ require 'shellwords'
 
 module FFMPEG
   class EncodingOptions < Hash
+    include HardwareAcceleration
+
     def initialize(options = {}, prefix_options = {})
       @prefix_options = prefix_options
       # If we are not told otherwise, assume that at least one stream contains audio
       @any_streams_contain_audio = options.fetch(:any_streams_contain_audio, true)
+      @use_gpu_acceleration = options.fetch(:use_gpu_acceleration, false) && options.fetch(:video_codec, '') == "h264_nvenc" && hardware_supports_gpu_hw_acceleration? && ffmpeg_supports_gpu_hw_acceleration?
       merge!(options)
     end
 
@@ -142,7 +145,12 @@ module FFMPEG
     end
 
     def convert_resolution(value)
-      "-s #{value}"
+      if @use_gpu_acceleration
+        vars = value.split("x")
+        "-vf scale_npp=#{vars[0].to_i}:#{vars[1].to_i}:format=yuv420p"
+      else
+        "-s #{value}"
+      end
     end
 
     def convert_video_bitrate(value)
