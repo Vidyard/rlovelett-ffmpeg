@@ -163,8 +163,8 @@ module FFMPEG
 
       string_duration = std_error.scan(/time=(\d+:\d+:\d+\.\d+)/).last.first
 
-      return string_duration.split(':').map(&:to_f).inject(0) { |a, b| a * 60 + b }
-    rescue Exception => e
+      return string_duration.split(':').map(&:to_f).inject(0) { |a, b| (a * 60) + b }
+    rescue Exception => e # rubocop:todo Lint/RescueException
       FFMPEG.logger.error("Failed to extract duration from #{@paths.first}")
       FFMPEG.logger.error(e)
       return 0
@@ -247,12 +247,12 @@ module FFMPEG
       width && height && (width > height)
     end
 
-    def transcode(output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {}, &block)
-      Transcoder.new(self, output_file, options, transcoder_options, transcoder_prefix_options).run &block
+    def transcode(output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {}, &)
+      Transcoder.new(self, output_file, options, transcoder_options, transcoder_prefix_options).run(&)
     end
 
-    def screenshot(output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {}, &block)
-      Transcoder.new(self, output_file, options.merge(screenshot: true), transcoder_options, transcoder_prefix_options).run &block
+    def screenshot(output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {}, &)
+      Transcoder.new(self, output_file, options.merge(screenshot: true), transcoder_options, transcoder_prefix_options).run(&)
     end
 
     def blackdetect

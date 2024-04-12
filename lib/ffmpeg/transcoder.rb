@@ -6,7 +6,6 @@ require 'securerandom'
 FIXED_LOWER_TO_UPPER_RATIO = 16.0/9.0
 FIXED_UPPER_TO_LOWER_RATIO = 9.0/16.0
 
-
 module FFMPEG
   class Transcoder
     @@timeout = 30
@@ -56,10 +55,10 @@ module FFMPEG
       apply_transcoder_options
     end
 
-    def run(&block)
-      transcode_movie(&block)
+    def run(&)
+      transcode_movie(&)
       if @transcoder_options[:validate]
-        validate_output_file(&block)
+        validate_output_file(&)
         return encoded
       else
         return nil
@@ -279,6 +278,12 @@ module FFMPEG
       else
         max_height = converted_height
       end
+
+      # Ensure dimensions are even for scaling + padding to not have rounding issues
+      # Relating to CRT-1554
+      # See https://trac.ffmpeg.org/ticket/1618
+      max_width += 1 unless max_width.even?
+      max_height += 1 unless max_height.even?
 
       return max_width, max_height
     end
