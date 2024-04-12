@@ -1,6 +1,6 @@
 require 'spec_helper.rb'
 
-module FFMPEG
+module FFMPEG # rubocop:todo Metrics/ModuleLength
   describe Movie do
 
     describe "initializing" do
