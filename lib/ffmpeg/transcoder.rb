@@ -280,6 +280,12 @@ module FFMPEG
         max_height = converted_height
       end
 
+      # Ensure dimensions are even for scaling + padding to not have rounding issues
+      # Relating to CRT-1554
+      # See https://trac.ffmpeg.org/ticket/1618
+      max_width = max_width.even? ? max_width : max_width + 1
+      max_height = max_height.even? ? max_height : max_height + 1
+
       return max_width, max_height
     end
   end
