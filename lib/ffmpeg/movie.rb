@@ -37,6 +37,7 @@ module FFMPEG
       # ffmpeg will output to stderr
       # This will only fetch the metadata for the first video provided
       command = "#{ffprobe_command} #{optional_arguments} -i #{@paths.first} -print_format json -show_format -show_streams -show_error"
+      puts "\n\n Running ffprobe command: #{command}\n\n\n"
       spawn = POSIX::Spawn::Child.new(command)
 
       std_output = spawn.out
