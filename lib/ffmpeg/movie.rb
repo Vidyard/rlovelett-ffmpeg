@@ -5,8 +5,8 @@ require 'posix-spawn'
 module FFMPEG
   class Movie
     attr_reader :path, :paths, :unescaped_paths, :interim_paths, :duration, :time, :bitrate, :rotation, :creation_time, :analyzeduration, :probesize
-    attr_reader :video_stream, :video_codec, :video_bitrate, :colorspace, :width, :height, :sar, :dar, :frame_rate, :has_b_frames, :video_profile, :video_level
-    attr_reader :audio_streams, :audio_stream, :audio_codec, :audio_bitrate, :audio_sample_rate, :audio_channels, :audio_tags
+    attr_reader :video_stream, :video_codec, :video_bitrate, :colorspace, :width, :height, :sar, :dar, :frame_rate, :video_start_time, :has_b_frames, :video_profile, :video_level
+    attr_reader :audio_streams, :audio_stream, :audio_codec, :audio_bitrate, :audio_sample_rate, :audio_channels, :audio_tags, :audio_start_time
     attr_reader :color_primaries, :avframe_color_space, :color_transfer
     attr_reader :container
     attr_reader :error
@@ -89,12 +89,12 @@ module FFMPEG
           @has_b_frames = video_stream[:has_b_frames].to_i
           @video_profile = video_stream[:profile]
           @video_level = video_stream[:level] / 10.0 unless video_stream[:level].nil?
-
           @frame_rate = unless video_stream[:avg_frame_rate] == '0/0'
                           Rational(video_stream[:avg_frame_rate])
                         else
                           nil
                         end
+          @video_start_time = video_stream[:start_time].to_f
 
           @video_stream = "#{video_stream[:codec_name]} (#{video_stream[:profile]}) (#{video_stream[:codec_tag_string]} / #{video_stream[:codec_tag]}), #{colorspace}, #{resolution} [SAR #{sar} DAR #{dar}]"
 
@@ -129,6 +129,7 @@ module FFMPEG
           @audio_channel_layout = audio_stream[:channel_layout]
           @audio_tags = audio_stream[:tags]
           @audio_stream = audio_stream[:overview]
+          @audio_start_time = audio_stream[:start_time].to_f
         end
       end
 
