@@ -48,7 +48,7 @@ module FFMPEG
       begin
         metadata = MultiJson.load(std_output, symbolize_keys: true)
       rescue MultiJson::ParseError
-        raise "Could not parse output from FFProbe:\n#{ std_output }"
+        raise "Could not parse output from FFProbe:\n#{ std_output }\n#{ std_error }"
       end
 
       if metadata.key?(:error)
