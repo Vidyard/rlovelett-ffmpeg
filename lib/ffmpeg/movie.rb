@@ -39,6 +39,9 @@ module FFMPEG
       command = "#{ffprobe_command} -hide_banner #{optional_arguments} -i #{@paths.first} -print_format json -show_format -show_streams -show_error -loglevel quiet"
       spawn = POSIX::Spawn::Child.new(command)
 
+      # If there is any error, we should not trust the output of the command
+      raise FFMPEG::FileProbeError if spawn.status&.exitstatus != 0
+
       std_output = spawn.out
       std_error = spawn.err
 
