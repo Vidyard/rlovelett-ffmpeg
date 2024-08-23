@@ -78,7 +78,8 @@ module FFMPEG
     private
     def pre_encode_if_necessary
       # Don't pre-encode single inputs since it doesn't need any size conversion
-      return if @movie.interim_paths.size <= 1
+      puts "\n\n pre_encode_if_necessary \n\n"
+      # return if @movie.interim_paths.size <= 1
 
       # Set a minimum frame rate
       output_frame_rate = [@raw_options[:frame_rate] || @movie.frame_rate, 30].max
