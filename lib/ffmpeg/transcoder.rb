@@ -19,6 +19,7 @@ module FFMPEG
     end
 
     def initialize(movie, output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {})
+      puts "\n\nRlovelett::FFMPEG::Transcoder initialize\n\n"
       @movie = movie
       @output_file = output_file
 
@@ -56,6 +57,7 @@ module FFMPEG
     end
 
     def run(&)
+      puts "\n\nRlovelett::FFMPEG::Transcoder run\n\n"
       transcode_movie(&)
       if @transcoder_options[:validate]
         validate_output_file(&)
@@ -154,6 +156,7 @@ module FFMPEG
     end
 
     def transcode_movie
+      puts "\n\nRlovelett::FFMPEG::Transcoder transcode_movie\n\n"
       pre_encode_if_necessary
 
       @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(@output_file)}"

@@ -249,6 +249,7 @@ module FFMPEG
     end
 
     def transcode(output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {}, &)
+      puts "\n\nRlovelett-ffmpeg: Movie.transcode\n\n"
       Transcoder.new(self, output_file, options, transcoder_options, transcoder_prefix_options).run(&)
     end
 
