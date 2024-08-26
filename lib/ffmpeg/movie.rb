@@ -10,6 +10,7 @@ module FFMPEG
     attr_reader :color_primaries, :avframe_color_space, :color_transfer
     attr_reader :container
     attr_reader :error
+    attr_reader :should_pre_encode
 
     UNSUPPORTED_CODEC_PATTERN = /^Unsupported codec with id (\d+) for input stream (\d+)$/
 
