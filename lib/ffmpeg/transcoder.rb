@@ -23,7 +23,11 @@ module FFMPEG
       @movie = movie
       @output_file = output_file
 
-      if true
+      # If the movie has varying resolutions, we need to pre-encode
+      # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
+      @movie.should_pre_encode = check_for_varying_resolutions(@movie.path)
+
+      if @movie.paths.size > 1 || @movie.should_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
           dirname = "#{File.dirname(path)}/interim"
@@ -78,10 +82,27 @@ module FFMPEG
     end
 
     private
+    def check_for_varying_resolutions(path)
+      # This should be fairly fast to check,
+      command = "#{@movie.ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(path)}" # -skip_frame nokey speeds up processing significantly
+      FFMPEG.logger.info("Running check for varying resolution...\n#{command}\n")
+      last_line = nil
+
+      Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
+        stdout.each_line do |line|
+          # if any of the frames have differing resolutions, return true
+          return true if last_line && line != last_line
+          last_line = line
+        end
+      end
+
+      # If we didn't find any differing frame resolutions, return false
+      false
+    end
+
     def pre_encode_if_necessary
-      # Don't pre-encode single inputs since it doesn't need any size conversion
-      puts "\n\n pre_encode_if_necessary \n\n"
-      # return if @movie.interim_paths.size <= 1
+      # Don't pre-encode single inputs since if pre_encode is false as they don't need any size conversion
+      return if @movie.interim_paths.size <= 1 && !@movie.should_pre_encode
 
       # Set a minimum frame rate
       output_frame_rate = [@raw_options[:frame_rate] || @movie.frame_rate, 30].max
