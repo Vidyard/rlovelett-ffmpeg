@@ -23,7 +23,7 @@ module FFMPEG
       @movie = movie
       @output_file = output_file
 
-      if @movie.paths.size > 1
+      if true
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
           dirname = "#{File.dirname(path)}/interim"
@@ -99,6 +99,9 @@ module FFMPEG
         audio_map = determine_audio_for_pre_encode(path)
 
         puts "\n\n pre_encode_if_necessary inter path: #{@movie.interim_paths[index]}\n\n"
+        /vidyard/Alchemist/tmp/development/-d5gXhnk2K_sX5LugjmPAQ/input_1b518082f50620233ee828.mkv
+        /vidyard/Alchemist/tmp/development/-d5gXhnk2K_sX5LugjmPAQ/input_1b518082f50620233ee828.mkv
+        ffmpeg -hide_banner -analyzeduration 15000000 -probesize 15000000 -y -i bad.mkv -movflags faststart -vcodec libx264 -acodec aac -ar 48000 -threads 0 -s 1262x720 -b:a 64k -ac 1 -r 30 -g 60 -b:v 1000k  -aspect 1.7527777777777778 -r 30 -filter_complex "[0:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[Scaled]" -map "[Scaled]" -map "0:a" ["bad.mkv"]
 
         command = "#{@movie.ffmpeg_command} -y -i #{Shellwords.escape(path)} -movflags faststart #{pre_encode_options} -r #{output_frame_rate} -filter_complex \"[0:v]scale=#{max_width}:#{max_height}:force_original_aspect_ratio=decrease,pad=#{max_width}:#{max_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[Scaled]\" -map \"[Scaled]\" #{audio_map} #{@movie.interim_paths[index]}"
         FFMPEG.logger.info("Running pre-encoding...\n#{command}\n")
