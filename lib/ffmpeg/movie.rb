@@ -10,7 +10,8 @@ module FFMPEG
     attr_reader :color_primaries, :avframe_color_space, :color_transfer
     attr_reader :container
     attr_reader :error
-    attr_reader :should_pre_encode
+
+    attr_accessor :should_pre_encode
 
     UNSUPPORTED_CODEC_PATTERN = /^Unsupported codec with id (\d+) for input stream (\d+)$/
 
@@ -264,6 +265,10 @@ module FFMPEG
 
     def any_streams_contain_audio?
       @any_streams_contain_audio ||= calc_any_streams_contain_audio
+    end
+
+    def did_pre_encode?
+      @should_pre_encode ||= false
     end
 
     protected
