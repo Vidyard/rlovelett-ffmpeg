@@ -11,8 +11,8 @@ module FFMPEG
     attr_reader :container
     attr_reader :error
 
-    attr_reader :should_pre_encode
-    protected :should_pre_encode=
+    attr_reader :did_pre_encode
+    attr_reader :has_dynamic_resolution
 
     UNSUPPORTED_CODEC_PATTERN = /^Unsupported codec with id (\d+) for input stream (\d+)$/
 
@@ -30,6 +30,7 @@ module FFMPEG
       @interim_paths = []
       @analyzeduration = analyzeduration;
       @probesize = probesize;
+      @did_pre_encode = false
 
       if @paths.any? {|path| path.end_with?('.m3u8') }
         optional_arguments = '-allowed_extensions ALL'
@@ -268,11 +269,10 @@ module FFMPEG
       @any_streams_contain_audio ||= calc_any_streams_contain_audio
     end
 
-    def did_pre_encode?
-      @should_pre_encode ||= false
-    end
-
     protected
+
+    # attr_writer :did_pre_encode
+    # attr_writer :has_dynamic_resolution
 
     def calc_any_streams_contain_audio
       return true unless @audio_stream.nil? || @audio_stream.empty?

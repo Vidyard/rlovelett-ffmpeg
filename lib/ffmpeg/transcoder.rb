@@ -25,9 +25,13 @@ module FFMPEG
 
       # If the movie has varying resolutions, we need to pre-encode
       # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
-      @movie.should_pre_encode = check_for_varying_resolutions(@movie.path)
+      @movie.has_dynamic_resolution = check_for_dynamic_resolution(@movie.path)
+      permit_dynamic_resolution_pre_encode = transcoder_options.fetch(:permit_dynamic_resolution_pre_encode) { false }
 
-      if @movie.paths.size > 1 || @movie.should_pre_encode
+      # Don't pre-encode single inputs since if pre_encode is false as they don't need any size conversion
+      @movie.requires_pre_encode = @movie.paths.size > 1 || (permit_dynamic_resolution_pre_encode && @movie.has_dynamic_resolution)
+
+      if @movie.requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
           dirname = "#{File.dirname(path)}/interim"
@@ -82,7 +86,7 @@ module FFMPEG
     end
 
     private
-    def check_for_varying_resolutions(path)
+    def check_for_dynamic_resolution(path)
       # This should be fairly fast to check,
       command = "#{@movie.ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(path)}" # -skip_frame nokey speeds up processing significantly
       FFMPEG.logger.info("Running check for varying resolution...\n#{command}\n")
@@ -101,8 +105,9 @@ module FFMPEG
     end
 
     def pre_encode_if_necessary
-      # Don't pre-encode single inputs since if pre_encode is false as they don't need any size conversion
-      return if @movie.interim_paths.size <= 1 && !@movie.should_pre_encode
+      return unless @movie.requires_pre_encode
+
+      @movie.did_pre_encode = true
 
       # Set a minimum frame rate
       output_frame_rate = [@raw_options[:frame_rate] || @movie.frame_rate, 30].max
