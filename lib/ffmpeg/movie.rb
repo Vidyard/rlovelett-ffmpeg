@@ -11,7 +11,8 @@ module FFMPEG
     attr_reader :container
     attr_reader :error
 
-    attr_accessor :should_pre_encode
+    attr_reader :should_pre_encode
+    protected :should_pre_encode=
 
     UNSUPPORTED_CODEC_PATTERN = /^Unsupported codec with id (\d+) for input stream (\d+)$/
 
