@@ -25,11 +25,15 @@ module FFMPEG
 
       # If the movie has varying resolutions, we need to pre-encode
       # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
+      puts "1"
       @movie.has_dynamic_resolution = check_for_dynamic_resolution(@movie.path)
+      puts "2"
       permit_dynamic_resolution_pre_encode = transcoder_options.fetch(:permit_dynamic_resolution_pre_encode) { false }
+      puts "3"
 
       # Don't pre-encode single inputs since if pre_encode is false as they don't need any size conversion
       @movie.requires_pre_encode = @movie.paths.size > 1 || (permit_dynamic_resolution_pre_encode && @movie.has_dynamic_resolution)
+      puts "4"
 
       if @movie.requires_pre_encode
         @movie.paths.each do |path|
