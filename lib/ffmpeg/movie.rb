@@ -11,7 +11,7 @@ module FFMPEG
     attr_reader :container
     attr_reader :error
 
-    attr_accessor :has_dynamic_resolution, :did_pre_encode, :requires_pre_encode
+    attr_accessor :has_dynamic_resolution, :requires_pre_encode
 
     UNSUPPORTED_CODEC_PATTERN = /^Unsupported codec with id (\d+) for input stream (\d+)$/
 
@@ -29,7 +29,6 @@ module FFMPEG
       @interim_paths = []
       @analyzeduration = analyzeduration;
       @probesize = probesize;
-      @did_pre_encode = false
 
       if @paths.any? {|path| path.end_with?('.m3u8') }
         optional_arguments = '-allowed_extensions ALL'
@@ -268,10 +267,44 @@ module FFMPEG
       @any_streams_contain_audio ||= calc_any_streams_contain_audio
     end
 
-    protected
+    def check_frame_resolutions
+      max_width = @movie.width
+      max_height = @movie.height
+      differing_frame_resolutions = false
+      last_line = nil
 
-    # attr_writer :did_pre_encode
-    # attr_writer :has_dynamic_resolution
+      @movie.unescaped_paths.each do |path|
+        local_movie = Movie.new(path) # reference from highest res frames
+
+        command = "#{@movie.ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(local_movie.path)}" # -skip_frame nokey speeds up processing significantly
+        FFMPEG.logger.info("Running check for varying resolution...\n#{command}\n")
+
+        Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
+          stdout.each_line do |line|
+            # Parse the width and height from the line
+            width, height = line.split(',').map(&:to_i)
+
+            # Update max width and max height
+            max_width = [max_width, width].max
+            max_height = [max_height, height].max
+
+            # Check if the current frame resolution differs from the last frame
+            if last_line && line != last_line
+              differing_frame_resolutions = true
+            end
+
+            last_line = line
+          end
+        end
+      end
+
+      @has_dynamic_resolution = differing_frame_resolutions
+
+      # Return the max width, max height, and whether differing resolutions were found
+      [max_width, max_height, differing_frame_resolutions]
+    end
+
+    protected
 
     def calc_any_streams_contain_audio
       return true unless @audio_stream.nil? || @audio_stream.empty?

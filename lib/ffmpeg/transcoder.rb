@@ -18,24 +18,27 @@ module FFMPEG
       @@timeout
     end
 
+    def requires_pre_encode
+      # Don't pre-encode single inputs since if pre_encode is false as they don't need any size conversion
+      @movie.paths.size > 1 || (@transcoder_options[:permit_dynamic_resolution_pre_encode] && @movie.has_dynamic_resolution)
+    end
+
     def initialize(movie, output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {})
       puts "\n\nRlovelett::FFMPEG::Transcoder initialize\n\n"
       @movie = movie
       @output_file = output_file
 
+      @transcoder_options = transcoder_options
+      @transcoder_prefix_options = transcoder_prefix_options
+      @errors = []
+
+      apply_transcoder_options
+
       # If the movie has varying resolutions, we need to pre-encode
       # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
-      puts "1"
-      @movie.has_dynamic_resolution = check_for_dynamic_resolution(@movie.path) # TODO: move to movie
-      puts "2"
-      permit_dynamic_resolution_pre_encode = transcoder_options.fetch(:permit_dynamic_resolution_pre_encode) { false }
-      puts "3"
+      check_frame_resolutions if @transcoder_options[:permit_dynamic_resolution_pre_encode]
 
-      # Don't pre-encode single inputs since if pre_encode is false as they don't need any size conversion
-      @movie.requires_pre_encode = @movie.paths.size > 1 || (permit_dynamic_resolution_pre_encode && @movie.has_dynamic_resolution)
-      puts "4"
-
-      if @movie.requires_pre_encode
+      if requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
           dirname = "#{File.dirname(path)}/interim"
@@ -60,12 +63,6 @@ module FFMPEG
       else
         raise ArgumentError, "Unknown options format '#{options.class}', should be either EncodingOptions, Hash or String."
       end
-
-      @transcoder_options = transcoder_options
-      @transcoder_prefix_options = transcoder_prefix_options
-      @errors = []
-
-      apply_transcoder_options
     end
 
     def run(&)
@@ -90,28 +87,9 @@ module FFMPEG
     end
 
     private
-    def check_for_dynamic_resolution(path)
-      # This should be fairly fast to check,
-      command = "#{@movie.ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(path)}" # -skip_frame nokey speeds up processing significantly
-      FFMPEG.logger.info("Running check for varying resolution...\n#{command}\n")
-      last_line = nil
-
-      Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
-        stdout.each_line do |line|
-          # if any of the frames have differing resolutions, return true
-          return true if last_line && line != last_line
-          last_line = line
-        end
-      end
-
-      # If we didn't find any differing frame resolutions, return false
-      false
-    end
 
     def pre_encode_if_necessary
-      return unless @movie.requires_pre_encode
-
-      @movie.did_pre_encode = true # TODO: Remove as requires_pre_encode should be enough
+      return unless requires_pre_encode
 
       # Set a minimum frame rate
       output_frame_rate = [@raw_options[:frame_rate] || @movie.frame_rate, 30].max
@@ -241,6 +219,9 @@ module FFMPEG
        # if true runs #validate_output_file
       @transcoder_options[:validate] = @transcoder_options.fetch(:validate) { true }
 
+      # if true checks for varying resolutions and pre-encodes if necessary
+      @transcoder_options[:permit_dynamic_resolution_pre_encode] = @transcoder_options.fetch(:permit_dynamic_resolution_pre_encode) { false }
+
       return if @movie.calculated_aspect_ratio.nil?
       case @transcoder_options[:preserve_aspect_ratio].to_s
       when "width"
@@ -293,16 +274,7 @@ module FFMPEG
     end
 
     def calculate_interim_max_dimensions
-      max_width = @movie.width
-      max_height = @movie.height
-      # Find best highest resolution
-      @movie.unescaped_paths.each do |path|
-        local_movie = Movie.new(path)
-
-        # If the local resolution is larger than the current highest
-        max_width = [local_movie.width, max_width].max
-        max_height = [local_movie.height, max_height].max
-      end
+      max_width, max_height = frame_based_resolution
 
       converted_width = (max_height * FIXED_LOWER_TO_UPPER_RATIO).ceil()
       converted_height = (max_width * FIXED_UPPER_TO_LOWER_RATIO).ceil()
