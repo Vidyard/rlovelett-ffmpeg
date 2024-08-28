@@ -20,7 +20,8 @@ module FFMPEG
 
     def requires_pre_encode
       # Don't pre-encode single inputs since if pre_encode is false as they don't need any size conversion
-      @movie.paths.size > 1 || (@transcoder_options[:permit_dynamic_resolution_pre_encode] && @movie.has_dynamic_resolution)
+      @movie.requires_pre_encode = @movie.paths.size > 1 || (@transcoder_options[:permit_dynamic_resolution_pre_encode] && @movie.has_dynamic_resolution)
+      return @movie.requires_pre_encode
     end
 
     def initialize(movie, output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {})
