@@ -271,6 +271,8 @@ module FFMPEG
 
     protected
 
+    attr_accessor :has_dynamic_resolution, :did_pre_encode
+
     # attr_writer :did_pre_encode
     # attr_writer :has_dynamic_resolution
 
