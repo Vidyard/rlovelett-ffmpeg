@@ -273,7 +273,7 @@ module FFMPEG
     end
 
     def calculate_interim_max_dimensions
-      max_width, max_height = check_frame_resolutions
+      max_width, max_height = @movie.check_frame_resolutions
 
       converted_width = (max_height * FIXED_LOWER_TO_UPPER_RATIO).ceil()
       converted_height = (max_width * FIXED_UPPER_TO_LOWER_RATIO).ceil()
