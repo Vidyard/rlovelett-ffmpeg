@@ -268,8 +268,11 @@ module FFMPEG
     end
 
     def check_frame_resolutions
+      puts '1'
       max_width = width
+      puts '2'
       max_height = height
+      puts '3'
       differing_frame_resolutions = false
       last_line = nil
 
@@ -282,11 +285,11 @@ module FFMPEG
         Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
           stdout.each_line do |line|
             # Parse the width and height from the line
-            width, height = line.split(',').map(&:to_i)
+            frame_width, frame_height = line.split(',').map(&:to_i)
 
             # Update max width and max height
-            max_width = [max_width, width].max
-            max_height = [max_height, height].max
+            max_width = [max_width, frame_width].max
+            max_height = [max_height, frame_height].max
 
             # Check if the current frame resolution differs from the last frame
             if last_line && line != last_line
@@ -298,6 +301,7 @@ module FFMPEG
         end
       end
 
+      puts '4'
       @has_dynamic_resolution = differing_frame_resolutions
 
       # Return the max width, max height, and whether differing resolutions were found
