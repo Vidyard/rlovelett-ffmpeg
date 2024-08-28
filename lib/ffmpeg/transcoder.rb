@@ -27,12 +27,7 @@ module FFMPEG
       puts "\n\nRlovelett::FFMPEG::Transcoder initialize\n\n"
       @movie = movie
       @output_file = output_file
-
       @transcoder_options = transcoder_options
-      @transcoder_prefix_options = transcoder_prefix_options
-      @errors = []
-
-      apply_transcoder_options
 
       # If the movie has varying resolutions, we need to pre-encode
       # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
@@ -63,6 +58,11 @@ module FFMPEG
       else
         raise ArgumentError, "Unknown options format '#{options.class}', should be either EncodingOptions, Hash or String."
       end
+
+      @transcoder_prefix_options = transcoder_prefix_options
+      @errors = []
+
+      apply_transcoder_options
     end
 
     def run(&)
@@ -218,9 +218,6 @@ module FFMPEG
     def apply_transcoder_options
        # if true runs #validate_output_file
       @transcoder_options[:validate] = @transcoder_options.fetch(:validate) { true }
-
-      # if true checks for varying resolutions and pre-encodes if necessary
-      @transcoder_options[:permit_dynamic_resolution_pre_encode] = @transcoder_options.fetch(:permit_dynamic_resolution_pre_encode) { false }
 
       return if @movie.calculated_aspect_ratio.nil?
       case @transcoder_options[:preserve_aspect_ratio].to_s
