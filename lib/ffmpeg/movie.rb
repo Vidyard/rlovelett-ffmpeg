@@ -268,8 +268,8 @@ module FFMPEG
     end
 
     def check_frame_resolutions
-      max_width = @movie.width
-      max_height = @movie.height
+      max_width = width
+      max_height = height
       differing_frame_resolutions = false
       last_line = nil
 
