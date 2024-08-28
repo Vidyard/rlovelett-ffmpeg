@@ -29,10 +29,11 @@ module FFMPEG
       @output_file = output_file
       @transcoder_options = transcoder_options
 
+      puts "\n\nTanscoder options: #{@transcoder_options}"
+      puts "should check frame resolutions: #{@transcoder_options[:permit_dynamic_resolution_pre_encode]}\n\n"
       # If the movie has varying resolutions, we need to pre-encode
       # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
       check_frame_resolutions if @transcoder_options[:permit_dynamic_resolution_pre_encode]
-
       if requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
