@@ -276,10 +276,10 @@ module FFMPEG
       differing_frame_resolutions = false
       last_line = nil
 
-      @movie.unescaped_paths.each do |path|
+      unescaped_paths.each do |path|
         local_movie = Movie.new(path) # reference from highest res frames
 
-        command = "#{@movie.ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(local_movie.path)}" # -skip_frame nokey speeds up processing significantly
+        command = "#{ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(local_movie.path)}" # -skip_frame nokey speeds up processing significantly
         FFMPEG.logger.info("Running check for varying resolution...\n#{command}\n")
 
         Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
