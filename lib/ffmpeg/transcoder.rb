@@ -25,13 +25,10 @@ module FFMPEG
     end
 
     def initialize(movie, output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {})
-      puts "\n\nRlovelett::FFMPEG::Transcoder initialize\n\n"
       @movie = movie
       @output_file = output_file
       @transcoder_options = transcoder_options
 
-      puts "\n\nTanscoder options: #{@transcoder_options}"
-      puts "should check frame resolutions: #{@transcoder_options[:permit_dynamic_resolution_pre_encode]}\n\n"
       # If the movie has varying resolutions, we need to pre-encode
       # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
       @movie.check_frame_resolutions if @transcoder_options[:permit_dynamic_resolution_pre_encode]
@@ -69,7 +66,6 @@ module FFMPEG
     end
 
     def run(&)
-      puts "\n\nRlovelett::FFMPEG::Transcoder run\n\n"
       transcode_movie(&)
       if @transcoder_options[:validate]
         validate_output_file(&)
@@ -108,8 +104,6 @@ module FFMPEG
       # Convert the individual videos into a common format
       @movie.unescaped_paths.each_with_index do |path, index|
         audio_map = determine_audio_for_pre_encode(path)
-
-        puts "\n\n pre_encode_if_necessary inter path: #{@movie.interim_paths[index]}\n\n"
 
         command = "#{@movie.ffmpeg_command} -y -i #{Shellwords.escape(path)} -movflags faststart #{pre_encode_options} -r #{output_frame_rate} -filter_complex \"[0:v]scale=#{max_width}:#{max_height}:force_original_aspect_ratio=decrease,pad=#{max_width}:#{max_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[Scaled]\" -map \"[Scaled]\" #{audio_map} #{@movie.interim_paths[index]}"
         FFMPEG.logger.info("Running pre-encoding...\n#{command}\n")
@@ -169,7 +163,6 @@ module FFMPEG
     end
 
     def transcode_movie
-      puts "\n\nRlovelett::FFMPEG::Transcoder transcode_movie\n\n"
       pre_encode_if_necessary
 
       @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(@output_file)}"

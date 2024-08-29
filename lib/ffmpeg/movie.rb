@@ -251,7 +251,6 @@ module FFMPEG
     end
 
     def transcode(output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {}, &)
-      puts "\n\nRlovelett-ffmpeg: Movie.transcode\n\n"
       Transcoder.new(self, output_file, options, transcoder_options, transcoder_prefix_options).run(&)
     end
 
@@ -268,11 +267,8 @@ module FFMPEG
     end
 
     def check_frame_resolutions
-      puts '1'
       max_width = width
-      puts '2'
       max_height = height
-      puts '3'
       differing_frame_resolutions = false
       last_line = nil
 
@@ -301,7 +297,6 @@ module FFMPEG
         end
       end
 
-      puts '4'
       @has_dynamic_resolution = differing_frame_resolutions
 
       # Return the max width, max height, and whether differing resolutions were found
