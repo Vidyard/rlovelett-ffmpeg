@@ -266,6 +266,7 @@ module FFMPEG
       @any_streams_contain_audio ||= calc_any_streams_contain_audio
     end
 
+    # Get the max width and max height of all frames in the input movies and check if the resolutions of frames are consistent
     def check_frame_resolutions
       max_width = width
       max_height = height
@@ -275,12 +276,12 @@ module FFMPEG
       unescaped_paths.each do |path|
         local_movie = Movie.new(path) # reference from highest res frames
 
+        # this command should be fairly fast - ~30 seconds on a 3 hr video
         command = "#{ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(local_movie.path)}" # -skip_frame nokey speeds up processing significantly
         FFMPEG.logger.info("Running check for varying resolution...\n#{command}\n")
 
         Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
           stdout.each_line do |line|
-            # Parse the width and height from the line
             frame_width, frame_height = line.split(',').map(&:to_i)
 
             # Update max width and max height

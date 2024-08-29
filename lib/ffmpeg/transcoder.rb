@@ -19,7 +19,7 @@ module FFMPEG
     end
 
     def requires_pre_encode
-      # Don't pre-encode single inputs since if pre_encode is false as they don't need any size conversion
+      # Stitches and trims with dynamic resolution require pre-encoding
       @movie.requires_pre_encode = @movie.paths.size > 1 || (@transcoder_options[:permit_dynamic_resolution_pre_encode] && @movie.has_dynamic_resolution)
       return @movie.requires_pre_encode
     end
@@ -29,7 +29,7 @@ module FFMPEG
       @output_file = output_file
       @transcoder_options = transcoder_options
 
-      # If the movie has varying resolutions, we need to pre-encode
+      # If the movie has frames with varying resolutions, we need to pre-encode the movie for trims
       # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
       @movie.check_frame_resolutions if @transcoder_options[:permit_dynamic_resolution_pre_encode]
 
@@ -267,6 +267,7 @@ module FFMPEG
     end
 
     def calculate_interim_max_dimensions
+      # Get max width and max height of all inputs from each frame
       max_width, max_height = @movie.check_frame_resolutions
 
       converted_width = (max_height * FIXED_LOWER_TO_UPPER_RATIO).ceil()
