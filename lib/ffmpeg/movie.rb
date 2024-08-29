@@ -15,6 +15,9 @@ module FFMPEG
 
     UNSUPPORTED_CODEC_PATTERN = /^Unsupported codec with id (\d+) for input stream (\d+)$/
 
+    @has_dynamic_resolution = false
+    @requires_pre_encode = false
+
     def initialize(paths, analyzeduration = 15000000, probesize=15000000 )
       paths = [paths] unless paths.is_a? Array
 
@@ -277,7 +280,7 @@ module FFMPEG
         local_movie = Movie.new(path) # reference from highest res frames
 
         # this command should be fairly fast - ~30 seconds on a 3 hr video
-        command = "#{ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(local_movie.path)}" # -skip_frame nokey speeds up processing significantly
+        command = "#{ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(local_movie.path)}" # -skip_frame nokey speeds up processing significantly, only evaluating key frames which seems to be sufficient for frame resolution checks
         FFMPEG.logger.info("Running check for varying resolution...\n#{command}\n")
 
         Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
@@ -291,7 +294,6 @@ module FFMPEG
 
             # Check if the current frame resolution differs from the last frame
             if last_dimensions && frame_dimensions != last_dimensions
-              puts "1111111Found differing frame resolutions: #{last_dimensions} vs #{frame_dimensions}"
               differing_frame_resolutions = true
             end
 
