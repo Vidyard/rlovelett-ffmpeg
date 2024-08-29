@@ -271,7 +271,7 @@ module FFMPEG
       max_width = width
       max_height = height
       differing_frame_resolutions = false
-      last_line = nil
+      last_dimensions = nil
 
       unescaped_paths.each do |path|
         local_movie = Movie.new(path) # reference from highest res frames
@@ -282,18 +282,19 @@ module FFMPEG
 
         Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
           stdout.each_line do |line|
-            frame_width, frame_height = line.split(',').map(&:to_i)
+            frame_dimensions = line.split(',').reject(&:empty?).map(&:to_i)
+            frame_width, frame_height = frame_dimensions
 
             # Update max width and max height
             max_width = [max_width, frame_width].max
             max_height = [max_height, frame_height].max
 
             # Check if the current frame resolution differs from the last frame
-            if last_line && line != last_line
+            if last_dimensions && frame_dimensions != last_dimensions
               differing_frame_resolutions = true
             end
 
-            last_line = line
+            last_dimensions = frame_dimensions
           end
         end
       end
