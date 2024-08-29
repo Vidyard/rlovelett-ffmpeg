@@ -282,7 +282,7 @@ module FFMPEG
 
         Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
           stdout.each_line do |line|
-            frame_dimensions = line.split(',').reject(&:empty?).map(&:to_i)
+            frame_dimensions = line.split(',').first(2).map(&:to_i) # get the first two values as ffmpeg can sometimes provide an extra comma
             frame_width, frame_height = frame_dimensions
 
             # Update max width and max height
