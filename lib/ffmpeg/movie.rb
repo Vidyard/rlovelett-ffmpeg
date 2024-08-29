@@ -291,6 +291,7 @@ module FFMPEG
 
             # Check if the current frame resolution differs from the last frame
             if last_dimensions && frame_dimensions != last_dimensions
+              puts "1111111Found differing frame resolutions: #{last_dimensions} vs #{frame_dimensions}"
               differing_frame_resolutions = true
             end
 
