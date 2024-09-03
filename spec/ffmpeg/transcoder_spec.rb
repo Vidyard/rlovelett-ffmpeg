@@ -323,34 +323,87 @@ module FFMPEG
     describe "pre_encode_if_necessary" do
       let(:output_path) { "#{tmp_path}/pre_encode_out.mp4" }
 
-      it 'returns early if only a single video file' do
+      it 'returns early if only a single video file and no dynamic resolution' do
         transcoder = Transcoder.new(movie, output_path, EncodingOptions.new)
+        allow(movie).to receive(:has_dynamic_resolution).and_return(false)
         expect(movie).not_to receive(:height)
         transcoder.send(:pre_encode_if_necessary)
+      end
+
+      it 'requires pre-encoding when movie has a single path and dynamic resolution is permitted' do
+        transcoder = Transcoder.new(movie, output_path, EncodingOptions.new, { permit_dynamic_resolution_pre_encode: true })
+        allow(movie).to receive(:has_dynamic_resolution).and_return(true)
+        expect(transcoder.requires_pre_encode).to be true
+      end
+
+      it 'does not require pre-encoding when movie has a single path and dynamic resolution is not permitted' do
+        transcoder = Transcoder.new(movie, output_path, EncodingOptions.new, { permit_dynamic_resolution_pre_encode: false })
+        allow(movie).to receive(:has_dynamic_resolution).and_return(true)
+        expect(transcoder.requires_pre_encode).to be false
       end
 
       describe 'creates interim inputs with scaling correctly applied based on input files' do
         it 'with audio' do
           transcoder = Transcoder.new(movie_with_multiple_dimension_inputs, output_path, EncodingOptions.new)
-          expect(Open3).to receive(:popen3).twice.with match(/.*\[0\:v\]scale\=854\:480.*pad\=854\:480\:\(ow\-iw\)\/2\:\(oh\-ih\)\/2\:color\=black.*\-map \"0\:a\".*/)
-          transcoder.send(:pre_encode_if_necessary)
 
+          expect(Open3).to receive(:popen3).exactly(2).times # prevent ffprobe calls from being evaluated (check_frame_resolutions)
+          expect(Open3).to receive(:popen3).twice.with match(/.*\[0\:v\]scale\=854\:480.*pad\=854\:480\:\(ow\-iw\)\/2\:\(oh\-ih\)\/2\:color\=black.*\-map \"0\:a\".*/)
+
+          transcoder.send(:pre_encode_if_necessary)
         end
 
         it 'with silent audio' do
           transcoder = Transcoder.new(movie_with_multiple_dimension_inputs_with_partial_audio, output_path, EncodingOptions.new)
+
+          expect(Open3).to receive(:popen3).exactly(2).times # prevent ffprobe calls from being evaluated (check_frame_resolutions)
           # Match silent audio fill
           expect(Open3).to receive(:popen3).once.with match(/.*\[0\:v\]scale\=960\:540.*pad\=960\:540\:\(ow\-iw\)\/2\:\(oh\-ih\)\/2\:color\=black.*\-map \"\[a\]\".*/)
           # Retain "real" audio
           expect(Open3).to receive(:popen3).once.with match(/.*\[0\:v\]scale\=960\:540.*pad\=960\:540\:\(ow\-iw\)\/2\:\(oh\-ih\)\/2\:color\=black.*\-map \"0\:a\".*/)
+
           transcoder.send(:pre_encode_if_necessary)
         end
 
         it 'without any audio' do
           transcoder = Transcoder.new(movie_with_multiple_dimension_inputs_with_no_audio, output_path, EncodingOptions.new)
+
+          expect(Open3).to receive(:popen3).exactly(2).times # prevent ffprobe calls from being evaluated (check_frame_resolutions)
           expect(Open3).to receive(:popen3).twice.with match(/.*\[0\:v\]scale\=960\:540.*pad\=960\:540\:\(ow\-iw\)\/2\:\(oh\-ih\)\/2\:color\=black.*((?!\-map \"0\:a\")(?!\-map \"\[a\]\")).*/)
+
           transcoder.send(:pre_encode_if_necessary)
         end
+      end
+    end
+
+    describe "#requires_pre_encode" do
+      let(:output_path) { "#{tmp_path}/output.mp4" }
+
+      it 'requires pre-encoding when movie has multiple paths' do
+        transcoder = Transcoder.new(movie_with_two_inputs, output_path, EncodingOptions.new)
+        expect(transcoder.requires_pre_encode).to be true
+      end
+
+      it 'requires pre-encoding when movie has a single path and dynamic resolution is permitted' do
+        movie = Movie.new("#{fixture_path}/movies/awesome movie.mov")
+        transcoder_options = { permit_dynamic_resolution_pre_encode: true }
+        transcoder = Transcoder.new(movie, output_path, EncodingOptions.new, transcoder_options)
+        allow(movie).to receive(:has_dynamic_resolution).and_return(true)
+        expect(transcoder.requires_pre_encode).to be true
+      end
+
+      it 'does not require pre-encoding when movie has a single path and dynamic resolution is not permitted' do
+        movie = Movie.new("#{fixture_path}/movies/awesome movie.mov")
+        transcoder_options = { permit_dynamic_resolution_pre_encode: false }
+        transcoder = Transcoder.new(movie, output_path, EncodingOptions.new, transcoder_options)
+        allow(movie).to receive(:has_dynamic_resolution).and_return(true)
+        expect(transcoder.requires_pre_encode).to be false
+      end
+
+      it 'does not require pre-encoding when movie has a single path without dynamic resolution' do
+        movie = Movie.new("#{fixture_path}/movies/awesome movie.mov")
+        transcoder = Transcoder.new(movie, output_path, EncodingOptions.new)
+        allow(movie).to receive(:has_dynamic_resolution).and_return(false)
+        expect(transcoder.requires_pre_encode).to be false
       end
     end
   end
