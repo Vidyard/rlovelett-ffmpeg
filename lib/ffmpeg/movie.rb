@@ -271,8 +271,8 @@ module FFMPEG
 
     # Get the max width and max height of all frames in the input movies and check if the resolutions of frames are consistent
     def check_frame_resolutions
-      max_width = width
-      max_height = height
+      max_width = width || 0
+      max_height = height || 0
       differing_frame_resolutions = false
       last_dimensions = nil
 
@@ -291,6 +291,8 @@ module FFMPEG
           stdout.each_line do |line|
             frame_dimensions = line.split(',').first(2).map(&:to_i) # get the first two values as ffmpeg can sometimes provide an extra comma
             frame_width, frame_height = frame_dimensions
+
+            next if frame_width.nil? || frame_height.nil?
 
             # Update max width and max height
             max_width = [max_width, frame_width].max
