@@ -273,8 +273,15 @@ module FFMPEG
       # Get max width and max height of all inputs from each frame
       max_width, max_height = @movie.check_frame_resolutions
 
+      puts "frame resolution max_width: #{max_width}"
+      puts "frame resolution max_height: #{max_height}"
+
       converted_width = (max_height * FIXED_LOWER_TO_UPPER_RATIO).ceil()
       converted_height = (max_width * FIXED_UPPER_TO_LOWER_RATIO).ceil()
+
+      puts "converted_width: #{converted_width}"
+      puts "converted_height: #{converted_height}"
+
       # Convert to always be a 16:9 ratio
       # If the converted width will not be a decrease in resolution, upscale the width
       if converted_width >= max_width
@@ -283,6 +290,9 @@ module FFMPEG
       else
         max_height = converted_height
       end
+
+      puts "final max_width: #{max_width}"
+      puts "final max_height: #{max_height}"
 
       # Ensure dimensions are even for scaling + padding to not have rounding issues
       # Relating to CRT-1554
