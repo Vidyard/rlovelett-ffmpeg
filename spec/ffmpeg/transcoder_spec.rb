@@ -345,13 +345,7 @@ module FFMPEG
       describe 'creates interim inputs with scaling correctly applied based on input files' do
         it 'with audio' do
           transcoder = Transcoder.new(movie_with_multiple_dimension_inputs, output_path, EncodingOptions.new)
-          allow(Open3).to receive(:popen3) do |*args|
-            # Log the arguments passed to popen3
-            puts "Open3.popen3 called with: #{args.join(' ')}\n"
 
-            # Continue with the original behavior
-            # Open3.popen3(*args)
-          end
           expect(Open3).to receive(:popen3).exactly(2).times # prevent ffprobe calls from being evaluated (check_frame_resolutions)
           expect(Open3).to receive(:popen3).twice.with match(/.*\[0\:v\]scale\=854\:480.*pad\=854\:480\:\(ow\-iw\)\/2\:\(oh\-ih\)\/2\:color\=black.*\-map \"0\:a\".*/)
 
