@@ -16,7 +16,6 @@ module FFMPEG
     UNSUPPORTED_CODEC_PATTERN = /^Unsupported codec with id (\d+) for input stream (\d+)$/
 
     @has_dynamic_resolution = false
-    @requires_pre_encode = false
 
     def initialize(paths, analyzeduration = 15000000, probesize=15000000 )
       paths = [paths] unless paths.is_a? Array

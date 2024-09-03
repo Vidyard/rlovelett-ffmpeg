@@ -20,7 +20,7 @@ module FFMPEG
 
     def requires_pre_encode
       # Stitches and trims with dynamic resolution require pre-encoding
-      @movie.requires_pre_encode = @movie.paths.size > 1 || (@movie.has_dynamic_resolution && @transcoder_options[:permit_dynamic_resolution_pre_encode])
+      @movie.requires_pre_encode ||= @movie.paths.size > 1 || (@movie.has_dynamic_resolution && @transcoder_options[:permit_dynamic_resolution_pre_encode])
       return @movie.requires_pre_encode
     end
 
