@@ -277,9 +277,13 @@ module FFMPEG
       last_dimensions = nil
 
       unescaped_paths.each do |path|
-        local_movie = Movie.new(path) # reference from highest res frames
+        local_movie = Movie.new(path)
 
-        # this command should be fairly fast - ~30 seconds on a 3 hr video
+        # set max width and height from the movie metadata first
+        max_width = [max_width, local_movie.width].max
+        max_height = [max_height, local_movie.height].max
+
+        # Get each keyframe's resolution - this command should be fairly fast, ~30 seconds on a 3 hr video
         command = "#{ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(local_movie.path)}" # -skip_frame nokey speeds up processing significantly, only evaluating key frames which seems to be sufficient for frame resolution checks
         FFMPEG.logger.info("Running check for varying resolution...\n#{command}\n")
 
