@@ -105,6 +105,9 @@ module FFMPEG
       @movie.unescaped_paths.each_with_index do |path, index|
         audio_map = determine_audio_for_pre_encode(path)
 
+        puts "pre_encode_options: #{pre_encode_options}"
+        puts "max_width: #{max_width}"
+        puts "max_height: #{max_height}"
         command = "#{@movie.ffmpeg_command} -y -i #{Shellwords.escape(path)} -movflags faststart #{pre_encode_options} -r #{output_frame_rate} -filter_complex \"[0:v]scale=#{max_width}:#{max_height}:force_original_aspect_ratio=decrease,pad=#{max_width}:#{max_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[Scaled]\" -map \"[Scaled]\" #{audio_map} #{@movie.interim_paths[index]}"
         FFMPEG.logger.info("Running pre-encoding...\n#{command}\n")
         output = ""
