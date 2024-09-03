@@ -287,7 +287,7 @@ module FFMPEG
         command = "#{ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(local_movie.path)}" # -skip_frame nokey speeds up processing significantly, only evaluating key frames which seems to be sufficient for frame resolution checks
         FFMPEG.logger.info("Running check for varying resolution...\n#{command}\n")
 
-        Open3.popen3(command) do |stdin, stdout, stderr, wait_thr|
+        Open3.popen3(command) do |_stdin, stdout, _stderr, _wait_thr|
           stdout.each_line do |line|
             frame_dimensions = line.split(',').first(2).map(&:to_i) # get the first two values as ffmpeg can sometimes provide an extra comma
             frame_width, frame_height = frame_dimensions
