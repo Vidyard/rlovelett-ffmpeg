@@ -373,6 +373,27 @@ module FFMPEG
           transcoder.send(:pre_encode_if_necessary)
         end
       end
+
+      describe "correctly applies the complex filter" do
+        it "when more than one input is provided will apply the complex filter" do
+          transcoder = Transcoder.new(movie_with_two_inputs, output_path, EncodingOptions.new)
+
+          expect(Open3).to receive(:popen3).exactly(2).times # prevent ffprobe calls from being evaluated (check_frame_resolutions)
+          expect(Open3).to receive(:popen3).twice.with match(/-filter_complex/)
+
+          transcoder.send(:pre_encode_if_necessary)
+        end
+
+        it "when only one input is provided does not apply the complex filter" do
+          transcoder_options = { permit_dynamic_resolution_pre_encode: true }
+          transcoder = Transcoder.new(movie, output_path, EncodingOptions.new, transcoder_options)
+          allow(movie).to receive(:has_dynamic_resolution).and_return(true)
+
+          expect(Open3).not_to receive(:popen3).with('-filter_complex')
+
+          transcoder.send(:pre_encode_if_necessary)
+        end
+      end
     end
 
     describe "#requires_pre_encode" do
