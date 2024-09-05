@@ -108,7 +108,7 @@ module FFMPEG
         complex_filter = ""
         unless @transcoder_options[:permit_dynamic_resolution_pre_encode]
           puts "Applying filter complex due to not being trim"
-          complex_filter = "-filter_complex \"[0:v]scale=#{max_width}:#{max_height},scale=#{max_width}:#{max_height}:force_original_aspect_ratio=decrease,pad=#{max_width}:#{max_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[Scaled]\" -map \"[Scaled]\" #{audio_map}"
+          complex_filter = "-filter_complex \"[0:v]scale=#{max_width}:#{max_height}:force_original_aspect_ratio=decrease,pad=#{max_width}:#{max_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[Scaled]\" -map \"[Scaled]\" #{audio_map}"
         end
 
         puts "pre_encode_options: #{pre_encode_options}"
