@@ -11,7 +11,12 @@ module FFMPEG
     attr_reader :container
     attr_reader :error
 
+    attr_accessor :has_dynamic_resolution, :requires_pre_encode
+
     UNSUPPORTED_CODEC_PATTERN = /^Unsupported codec with id (\d+) for input stream (\d+)$/
+
+    @has_dynamic_resolution = false
+    @requires_pre_encode = nil
 
     def initialize(paths, analyzeduration = 15000000, probesize=15000000 )
       paths = [paths] unless paths.is_a? Array
@@ -262,6 +267,51 @@ module FFMPEG
 
     def any_streams_contain_audio?
       @any_streams_contain_audio ||= calc_any_streams_contain_audio
+    end
+
+    # Get the max width and max height of all frames in the input movies and check if the resolutions of frames are consistent
+    def check_frame_resolutions
+      max_width = width || 0
+      max_height = height || 0
+      differing_frame_resolutions = false
+      last_dimensions = nil
+
+      unescaped_paths.each do |path|
+        local_movie = Movie.new(path)
+
+        # set max width and height from the movie metadata first
+        max_width = [max_width, local_movie.width].max
+        max_height = [max_height, local_movie.height].max
+
+        # Get each keyframe's resolution - this command should be fairly fast, ~30 seconds on a 3 hr video
+        command = "#{ffprobe_command} -v error -select_streams v:0 -show_entries frame=width,height -of csv=p=0 -skip_frame nokey #{Shellwords.escape(local_movie.path)}" # -skip_frame nokey speeds up processing significantly, only evaluating key frames which seems to be sufficient for frame resolution checks
+        FFMPEG.logger.info("Running check for varying resolution...\n#{command}\n")
+
+        Open3.popen3(command) do |_stdin, stdout, _stderr, _wait_thr|
+          stdout.each_line do |line|
+            frame_dimensions = line.split(',').first(2).map(&:to_i) # get the first two values as ffmpeg can sometimes provide an extra comma
+            frame_width, frame_height = frame_dimensions
+
+            next if frame_width.nil? || frame_height.nil?
+
+            # Update max width and max height
+            max_width = [max_width, frame_width].max
+            max_height = [max_height, frame_height].max
+
+            # Check if the current frame resolution differs from the last frame
+            if last_dimensions && frame_dimensions != last_dimensions
+              differing_frame_resolutions = true
+            end
+
+            last_dimensions = frame_dimensions
+          end
+        end
+      end
+
+      @has_dynamic_resolution = differing_frame_resolutions
+
+      # Return the max width, max height, and whether differing resolutions were found
+      [max_width, max_height, differing_frame_resolutions]
     end
 
     protected

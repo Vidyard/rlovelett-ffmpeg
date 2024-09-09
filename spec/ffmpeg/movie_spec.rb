@@ -545,5 +545,32 @@ module FFMPEG # rubocop:todo Metrics/ModuleLength
         movie.screenshot("#{tmp_path}/awesome.jpg", {seek_time: 2, dimensions: "640x480"}, {preserve_aspect_ratio: :width})
       end
     end
+
+    describe "#check_frame_resolutions" do
+      let(:movie) { Movie.new("#{fixture_path}/movies/awesome movie.mov") }
+      let(:movie_with_multiple_dimension_inputs) { Movie.new(["#{fixture_path}/movies/awesome_widescreen.mov", "#{fixture_path}/movies/sideways_movie.mov"]) }
+
+      it "handles empty frame resolution lines gracefully" do
+        allow(Open3).to receive(:popen3).and_yield(nil, "640,480\n\n", nil, nil)
+        expect(movie.check_frame_resolutions).to eq([640, 480, false])
+      end
+
+      describe 'returns the correct max width and height' do
+        it "when resolutions are consistent" do
+          allow(Open3).to receive(:popen3).and_yield(nil, "640,480\n640,480\n", nil, nil)
+          expect(movie.check_frame_resolutions).to eq([640, 480, false])
+        end
+
+        it "when resolutions are inconsistent" do
+          allow(Open3).to receive(:popen3).and_yield(nil, "640,480\n1920,300\n", nil, nil)
+          expect(movie.check_frame_resolutions).to eq([1920, 480, true])
+        end
+
+        it "when multiple inputs are provided" do
+          allow(Open3).to receive(:popen3).and_yield(nil, "640,480\n", nil, nil).and_yield(nil, "1920,300\n", nil, nil)
+          expect(movie_with_multiple_dimension_inputs.check_frame_resolutions).to eq([1920, 480, true])
+        end
+      end
+    end
   end
 end

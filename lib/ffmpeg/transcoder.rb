@@ -18,11 +18,22 @@ module FFMPEG
       @@timeout
     end
 
+    def requires_pre_encode
+      # Stitches and trims with dynamic resolution require pre-encoding
+      @movie.requires_pre_encode ||= @movie.paths.size > 1 || (@movie.has_dynamic_resolution && @transcoder_options[:permit_dynamic_resolution_pre_encode])
+      return @movie.requires_pre_encode
+    end
+
     def initialize(movie, output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {})
       @movie = movie
       @output_file = output_file
+      @transcoder_options = transcoder_options
 
-      if @movie.paths.size > 1
+      # If the movie has frames with varying resolutions, we need to pre-encode the movie for trims
+      # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
+      @movie.check_frame_resolutions if @transcoder_options[:permit_dynamic_resolution_pre_encode]
+
+      if requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
           dirname = "#{File.dirname(path)}/interim"
@@ -48,7 +59,6 @@ module FFMPEG
         raise ArgumentError, "Unknown options format '#{options.class}', should be either EncodingOptions, Hash or String."
       end
 
-      @transcoder_options = transcoder_options
       @transcoder_prefix_options = transcoder_prefix_options
       @errors = []
 
@@ -76,9 +86,9 @@ module FFMPEG
     end
 
     private
+
     def pre_encode_if_necessary
-      # Don't pre-encode single inputs since it doesn't need any size conversion
-      return if @movie.interim_paths.size <= 1
+      return unless requires_pre_encode
 
       # Set a minimum frame rate
       output_frame_rate = [@raw_options[:frame_rate] || @movie.frame_rate, 30].max
@@ -95,7 +105,13 @@ module FFMPEG
       @movie.unescaped_paths.each_with_index do |path, index|
         audio_map = determine_audio_for_pre_encode(path)
 
-        command = "#{@movie.ffmpeg_command} -y -i #{Shellwords.escape(path)} -movflags faststart #{pre_encode_options} -r #{output_frame_rate} -filter_complex \"[0:v]scale=#{max_width}:#{max_height}:force_original_aspect_ratio=decrease,pad=#{max_width}:#{max_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[Scaled]\" -map \"[Scaled]\" #{audio_map} #{@movie.interim_paths[index]}"
+        # Only re-scale the video if there are multiple inputs. If a single input video contains dynamic resolution it can cause issues with the filter_complex filter
+        complex_filter = ""
+        if @movie.paths.size > 1
+          complex_filter = "-filter_complex \"[0:v]scale=#{max_width}:#{max_height}:force_original_aspect_ratio=decrease,pad=#{max_width}:#{max_height}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1[Scaled]\" -map \"[Scaled]\" #{audio_map}"
+        end
+
+        command = "#{@movie.ffmpeg_command} -y -i #{Shellwords.escape(path)} -movflags faststart #{pre_encode_options} -r #{output_frame_rate} #{complex_filter} #{@movie.interim_paths[index]}"
         FFMPEG.logger.info("Running pre-encoding...\n#{command}\n")
         output = ""
 
@@ -257,19 +273,12 @@ module FFMPEG
     end
 
     def calculate_interim_max_dimensions
-      max_width = @movie.width
-      max_height = @movie.height
-      # Find best highest resolution
-      @movie.unescaped_paths.each do |path|
-        local_movie = Movie.new(path)
-
-        # If the local resolution is larger than the current highest
-        max_width = [local_movie.width, max_width].max
-        max_height = [local_movie.height, max_height].max
-      end
+      # Get max width and max height of all inputs from each frame
+      max_width, max_height = @movie.check_frame_resolutions
 
       converted_width = (max_height * FIXED_LOWER_TO_UPPER_RATIO).ceil()
       converted_height = (max_width * FIXED_UPPER_TO_LOWER_RATIO).ceil()
+
       # Convert to always be a 16:9 ratio
       # If the converted width will not be a decrease in resolution, upscale the width
       if converted_width >= max_width
