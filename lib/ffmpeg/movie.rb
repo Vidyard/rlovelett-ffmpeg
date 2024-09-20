@@ -103,13 +103,10 @@ module FFMPEG
 
           @video_stream = "#{video_stream[:codec_name]} (#{video_stream[:profile]}) (#{video_stream[:codec_tag_string]} / #{video_stream[:codec_tag]}), #{colorspace}, #{resolution} [SAR #{sar} DAR #{dar}]"
 
+          @rotation = nil
+
           video_stream[:side_data_list].each do |side_data_entry|
-            @rotation = if side_data_entry.key?(:rotation)
-                          side_data_entry[:rotation].to_i
-                        else
-                          nil
-                        end
-            break unless @rotation.nil?
+            @rotation = side_data_entry[:rotation].to_i if side_data_entry.key?(:rotation)
           end if video_stream.key?(:side_data_list)
         end
 
