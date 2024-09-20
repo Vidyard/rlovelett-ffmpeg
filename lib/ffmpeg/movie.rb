@@ -109,7 +109,7 @@ module FFMPEG
                         else
                           nil
                         end
-            break if @rotation
+            break if @rotation.present?
           end if video_stream.key?(:side_data_list)
         end
 
