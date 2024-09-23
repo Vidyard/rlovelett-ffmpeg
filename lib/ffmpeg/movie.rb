@@ -155,8 +155,11 @@ module FFMPEG
 
     # Run null encoding output to get actual duration if none provided
     def manually_extract_duration
+      start_time = Time.now
       command = "#{ffmpeg_command} -i #{@paths.first} -v quiet -stats -f null -"
       spawn = POSIX::Spawn::Child.new(command)
+      execution_time = Time.now - start_time
+      FFMPEG.logger.info("manually_extract_duration for command '#{command}': #{execution_time} seconds")
 
       # outputs to std error
       std_error = spawn.err
