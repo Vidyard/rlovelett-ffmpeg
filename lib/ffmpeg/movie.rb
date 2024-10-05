@@ -7,6 +7,7 @@ module FFMPEG
     attr_reader :path, :paths, :unescaped_paths, :interim_paths, :duration, :time, :bitrate, :rotation, :creation_time, :analyzeduration, :probesize
     attr_reader :video_stream, :video_codec, :video_bitrate, :colorspace, :width, :height, :sar, :dar, :frame_rate, :has_b_frames, :video_profile, :video_level, :video_start_time
     attr_reader :audio_streams, :audio_stream, :audio_codec, :audio_bitrate, :audio_sample_rate, :audio_channels, :audio_tags, :audio_start_time
+    attr_reader :data_streams
     attr_reader :color_primaries, :avframe_color_space, :color_transfer
     attr_reader :container
     attr_reader :error
