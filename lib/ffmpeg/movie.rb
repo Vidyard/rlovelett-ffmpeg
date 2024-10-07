@@ -7,6 +7,7 @@ module FFMPEG
     attr_reader :path, :paths, :unescaped_paths, :interim_paths, :duration, :time, :bitrate, :rotation, :creation_time, :analyzeduration, :probesize
     attr_reader :video_stream, :video_codec, :video_bitrate, :colorspace, :width, :height, :sar, :dar, :frame_rate, :has_b_frames, :video_profile, :video_level, :video_start_time
     attr_reader :audio_streams, :audio_stream, :audio_codec, :audio_bitrate, :audio_sample_rate, :audio_channels, :audio_tags, :audio_start_time
+    attr_reader :data_streams
     attr_reader :color_primaries, :avframe_color_space, :color_transfer
     attr_reader :container
     attr_reader :error
@@ -62,6 +63,7 @@ module FFMPEG
       else
         video_streams = metadata[:streams].select { |stream| stream.key?(:codec_type) and stream[:codec_type] === 'video' }
         audio_streams = metadata[:streams].select { |stream| stream.key?(:codec_type) and stream[:codec_type] === 'audio' }
+        data_streams = metadata[:streams].select { |stream| stream.key?(:codec_type) and stream[:codec_type] === 'data' }
 
         @container = metadata[:format][:format_name]
 
@@ -133,6 +135,15 @@ module FFMPEG
           @audio_tags = audio_stream[:tags]
           @audio_stream = audio_stream[:overview]
           @audio_start_time = audio_stream[:start_time].to_f
+        end
+
+        @data_streams = data_streams.map do |stream|
+          {
+            :index => stream[:index],
+            :codec_tag_string => stream[:codec_tag_string],
+            :codec_tag => stream[:codec_tag],
+            :tags => stream[:tags],
+          }
         end
       end
 
