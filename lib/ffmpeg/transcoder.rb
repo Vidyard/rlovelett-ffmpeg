@@ -36,12 +36,12 @@ module FFMPEG
       if requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
-          dirname = "#{File.dirname(path)}/interim"
+          dirname = "/tmp/interim"
           unless File.directory?(dirname)
             FileUtils.mkdir_p(dirname)
           end
 
-          interim_path = "#{File.dirname(path)}/interim/#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
+          interim_path = "/tmp/interim/#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
           @movie.interim_paths << interim_path
         end
       else
@@ -170,8 +170,10 @@ module FFMPEG
 
     def transcode_movie
       pre_encode_if_necessary
-
-      @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(@output_file)}"
+      # change output file to /tmp/interim/output.mp4 needs to be unique to every run
+      # get file extension from original file - dont overwrite original file
+      temp_output_file = "/tmp/interim/#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
+      @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
 
       FFMPEG.logger.info("Running transcoding...\n#{@command}\n")
       @output = ""
@@ -204,6 +206,10 @@ module FFMPEG
           raise Error, "Process hung. Full output: #{@output}"
         end
       end
+      # copy temp output file to original output file
+      FileUtils.cp(temp_output_file, @output_file)
+      # delete temp output file
+      FileUtils.rm_rf(temp_output_file, secure: true)
     end
 
     def validate_output_file(&block)
