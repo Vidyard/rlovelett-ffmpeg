@@ -76,7 +76,6 @@ module FFMPEG
     end
 
     def encoding_succeeded?
-      # failing test
       @errors << "no output file created" and return false unless File.exist?(@output_file)
       @errors << "encoded file is invalid" and return false unless encoded.valid?
       true
@@ -207,13 +206,8 @@ module FFMPEG
           raise Error, "Process hung. Full output: #{@output}"
         end
       end
-      begin
-        FileUtils.cp(temp_output_file, @output_file)
-      rescue Errno::ENOENT
-        raise FFMPEG::Error, "no output file created"
-      ensure
-        FileUtils.rm_rf(temp_output_file, secure: true)
-      end
+      FileUtils.cp(temp_output_file, @output_file)
+      FileUtils.rm_rf(temp_output_file, secure: true)
     end
 
     def validate_output_file(&block)

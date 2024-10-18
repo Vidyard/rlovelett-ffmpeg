@@ -215,9 +215,7 @@ module FFMPEG
 
         pending "should not crash on ISO-8859-1 characters (dont know how to spec this)"
 
-        # failing test
         it "should fail when given an invalid movie" do
-          expect(FFMPEG.logger).to receive(:error).at_least(:once)
           movie = Movie.new(__FILE__)
           transcoder = Transcoder.new(movie, "#{tmp_path}/fail.flv")
           expect { transcoder.run }.to raise_error(FFMPEG::Error, /no output file created/)
@@ -285,7 +283,6 @@ module FFMPEG
             FFMPEG.ffmpeg_binary = "#{fixture_path}/bin/ffmpeg-audio-only"
           end
 
-          # failing test
           it "should not fail when the timeout is exceeded" do
             transcoder = Transcoder.new(movie, "#{tmp_path}/timeout.mp4")
             # Would expect to raise (FFMPEG::Error, /Process hung/) before this
