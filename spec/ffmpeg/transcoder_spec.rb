@@ -71,7 +71,8 @@ module FFMPEG
         end
 
         it "should transcode the movie with progress given an awesome movie" do
-          FileUtils.rm_f "#{tmp_path}/awesome.flv"
+          output_file = "#{tmp_path}/awesome_#{SecureRandom.urlsafe_base64}.flv"
+          FileUtils.rm_f output_file
 
           transcoder = Transcoder.new(movie, "#{tmp_path}/awesome.flv")
           progress_updates = []
@@ -214,6 +215,7 @@ module FFMPEG
 
         pending "should not crash on ISO-8859-1 characters (dont know how to spec this)"
 
+        # failing test
         it "should fail when given an invalid movie" do
           expect(FFMPEG.logger).to receive(:error).at_least(:once)
           movie = Movie.new(__FILE__)
@@ -283,6 +285,7 @@ module FFMPEG
             FFMPEG.ffmpeg_binary = "#{fixture_path}/bin/ffmpeg-audio-only"
           end
 
+          # failing test
           it "should not fail when the timeout is exceeded" do
             transcoder = Transcoder.new(movie, "#{tmp_path}/timeout.mp4")
             # Would expect to raise (FFMPEG::Error, /Process hung/) before this
