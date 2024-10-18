@@ -72,15 +72,15 @@ module FFMPEG
 
         it "should transcode the movie with progress given an awesome movie" do
           output_file = "#{tmp_path}/awesome_#{SecureRandom.urlsafe_base64}.flv"
-          FileUtils.rm_f output_file
+          FileUtils.rm_f output_file if File.exist?(output_file)
 
-          transcoder = Transcoder.new(movie, "#{tmp_path}/awesome.flv")
+          transcoder = Transcoder.new(movie, output_file)
           progress_updates = []
           transcoder.run { |progress| progress_updates << progress }
           expect(transcoder.encoded).to be_valid
           expect(progress_updates).to include(0.0, 1.0)
           expect(progress_updates.length).to be >= 3
-          expect(File.exist?("#{tmp_path}/awesome.flv")).to be_truthy
+          expect(File.exist?(output_file)).to be_truthy
         end
 
         it "should transcode the movie with EncodingOptions" do
@@ -216,6 +216,7 @@ module FFMPEG
         pending "should not crash on ISO-8859-1 characters (dont know how to spec this)"
 
         it "should fail when given an invalid movie" do
+          expect(FFMPEG.logger).to receive(:error).at_least(:once)
           movie = Movie.new(__FILE__)
           transcoder = Transcoder.new(movie, "#{tmp_path}/fail.flv")
           expect { transcoder.run }.to raise_error(FFMPEG::Error, /no output file created/)
