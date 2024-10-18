@@ -206,7 +206,7 @@ module FFMPEG
           raise Error, "Process hung. Full output: #{@output}"
         end
       end
-      FileUtils.cp(temp_output_file, @output_file)
+      FileUtils.copy(temp_output_file, @output_file, preserve: true, verbose: true)
       FileUtils.rm_rf(temp_output_file, secure: true)
     end
 
