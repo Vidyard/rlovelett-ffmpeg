@@ -72,7 +72,7 @@ module FFMPEG
 
         it "should transcode the movie with progress given an awesome movie" do
           output_file = "#{tmp_path}/awesome_#{SecureRandom.urlsafe_base64}.flv"
-          FileUtils.rm_f output_file if File.exist?(output_file)
+          FileUtils.rm_f output_file
 
           transcoder = Transcoder.new(movie, output_file)
           progress_updates = []
