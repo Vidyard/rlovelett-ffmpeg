@@ -190,7 +190,7 @@ module FFMPEG
           yield(0.0) if block_given?
           next_line = Proc.new do |line|
             fix_encoding(line)
-            puts ""
+            puts "line = #{line}"
             @output << line
             if line.include?("time=")
               if line =~ /time=(\d+):(\d+):(\d+.\d+)/ # ffmpeg 0.8 and above style
@@ -214,7 +214,7 @@ module FFMPEG
           raise Error, "Process hung. Full output: #{@output}"
         end
       end
-      FileUtils.copy(temp_output_file, @output_file, preserve: true, verbose: true)
+      FileUtils.convert_prefix_options_to_string(temp_output_file, @output_file)
       FileUtils.rm_rf(temp_output_file, secure: true)
     end
 
