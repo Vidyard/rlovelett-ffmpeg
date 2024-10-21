@@ -214,7 +214,11 @@ module FFMPEG
           raise Error, "Process hung. Full output: #{@output}"
         end
       end
+
       FileUtils.cp(temp_output_file, @output_file)
+    rescue Errno::ENOENT
+      encoding_succeeded?
+    ensure
       FileUtils.rm_rf(temp_output_file, secure: true)
     end
 
