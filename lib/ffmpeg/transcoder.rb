@@ -172,6 +172,10 @@ module FFMPEG
       pre_encode_if_necessary
       # change output file to /tmp/interim/output.mp4 needs to be unique to every run
       # get file extension from original file - dont overwrite original file
+
+      unless File.directory?('/tmp/interim/')
+        FileUtils.mkdir_p('/tmp/interim/')
+      end
       temp_output_file = "/tmp/interim/#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
       @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
 
