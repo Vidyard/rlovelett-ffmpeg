@@ -180,8 +180,6 @@ module FFMPEG
       temp_output_file = "/tmp/interim/#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
       @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
 
-      puts "Running transcoding...\n#{@command}\n"
-
       FFMPEG.logger.info("Running transcoding...\n#{@command}\n")
       @output = ""
 
@@ -190,7 +188,6 @@ module FFMPEG
           yield(0.0) if block_given?
           next_line = Proc.new do |line|
             fix_encoding(line)
-            puts "line = #{line}"
             @output << line
             if line.include?("time=")
               if line =~ /time=(\d+):(\d+):(\d+.\d+)/ # ffmpeg 0.8 and above style
