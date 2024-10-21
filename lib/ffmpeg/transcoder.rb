@@ -29,6 +29,8 @@ module FFMPEG
       @output_file = output_file
       @transcoder_options = transcoder_options
 
+      self.ensure_temp_directory
+
       # If the movie has frames with varying resolutions, we need to pre-encode the movie for trims
       # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
       @movie.check_frame_resolutions if @transcoder_options[:permit_dynamic_resolution_pre_encode]
@@ -36,12 +38,7 @@ module FFMPEG
       if requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
-          dirname = "#{File.dirname(path)}/interim"
-          unless File.directory?(dirname)
-            FileUtils.mkdir_p(dirname)
-          end
-
-          interim_path = "#{File.dirname(path)}/interim/#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
+          interim_path = "/tmp/interim/#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
           @movie.interim_paths << interim_path
         end
       else
@@ -63,6 +60,13 @@ module FFMPEG
       @errors = []
 
       apply_transcoder_options
+    end
+
+    def ensure_temp_directory
+      dirname = "/tmp/interim"
+      unless File.directory?(dirname)
+        FileUtils.mkdir_p(dirname)
+      end
     end
 
     def run(&)
@@ -170,8 +174,13 @@ module FFMPEG
 
     def transcode_movie
       pre_encode_if_necessary
+      # change output file to /tmp/interim/output.mp4 needs to be unique to every run
+      # get file extension from original file - dont overwrite original file
 
-      @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(@output_file)}"
+      temp_output_file = "/tmp/interim/#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
+      @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
+
+      puts "Running transcoding...\n#{@command}\n"
 
       FFMPEG.logger.info("Running transcoding...\n#{@command}\n")
       @output = ""
@@ -181,6 +190,7 @@ module FFMPEG
           yield(0.0) if block_given?
           next_line = Proc.new do |line|
             fix_encoding(line)
+            puts "line = #{line}"
             @output << line
             if line.include?("time=")
               if line =~ /time=(\d+):(\d+):(\d+.\d+)/ # ffmpeg 0.8 and above style
@@ -204,6 +214,12 @@ module FFMPEG
           raise Error, "Process hung. Full output: #{@output}"
         end
       end
+
+      FileUtils.cp(temp_output_file, @output_file)
+    rescue Errno::ENOENT
+      encoding_succeeded?
+    ensure
+      FileUtils.rm_rf(temp_output_file, secure: true)
     end
 
     def validate_output_file(&block)
