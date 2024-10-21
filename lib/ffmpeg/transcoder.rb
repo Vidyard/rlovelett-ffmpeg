@@ -215,7 +215,6 @@ module FFMPEG
       unless File.exist?(temp_output_file)
         raise FFMPEG::Error, "no output file created"
       end
-``
       FileUtils.cp(temp_output_file, @output_file)
       FileUtils.rm_rf(temp_output_file, secure: true)
     end
