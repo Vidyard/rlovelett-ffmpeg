@@ -38,7 +38,7 @@ module FFMPEG
       if requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
-          interim_path = "/tmp/interim/#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
+          interim_path = "/tmp/#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
           @movie.interim_paths << interim_path
         end
       else
@@ -63,7 +63,7 @@ module FFMPEG
     end
 
     def ensure_temp_directory
-      dirname = "/tmp/interim"
+      dirname = "/tmp/"
       unless File.directory?(dirname)
         FileUtils.mkdir_p(dirname)
       end
@@ -177,7 +177,7 @@ module FFMPEG
       # change output file to /tmp/interim/output.mp4 needs to be unique to every run
       # get file extension from original file - dont overwrite original file
 
-      temp_output_file = "/tmp/interim/#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
+      temp_output_file = "/tmp/#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
       @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
 
       FFMPEG.logger.info("Running transcoding...\n#{@command}\n")
@@ -212,10 +212,11 @@ module FFMPEG
         end
       end
 
+      unless File.exist?(temp_output_file)
+        raise FFMPEG::Error, "no output file created"
+      end
+``
       FileUtils.cp(temp_output_file, @output_file)
-    rescue Errno::ENOENT
-      encoding_succeeded?
-    ensure
       FileUtils.rm_rf(temp_output_file, secure: true)
     end
 
