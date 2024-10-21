@@ -71,16 +71,15 @@ module FFMPEG
         end
 
         it "should transcode the movie with progress given an awesome movie" do
-          output_file = "#{tmp_path}/awesome_#{SecureRandom.urlsafe_base64}.flv"
-          FileUtils.rm_f output_file
+          FileUtils.rm_f "#{tmp_path}/awesome.flv"
 
-          transcoder = Transcoder.new(movie, output_file)
+          transcoder = Transcoder.new(movie, "#{tmp_path}/awesome.flv")
           progress_updates = []
           transcoder.run { |progress| progress_updates << progress }
           expect(transcoder.encoded).to be_valid
           expect(progress_updates).to include(0.0, 1.0)
           expect(progress_updates.length).to be >= 3
-          expect(File.exist?(output_file)).to be_truthy
+          expect(File.exist?("#{tmp_path}/awesome.flv")).to be_truthy
         end
 
         it "should transcode the movie with EncodingOptions" do
