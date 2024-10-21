@@ -214,7 +214,7 @@ module FFMPEG
           raise Error, "Process hung. Full output: #{@output}"
         end
       end
-      FileUtils.convert_prefix_options_to_string(temp_output_file, @output_file)
+      FileUtils.cp(temp_output_file, @output_file)
       FileUtils.rm_rf(temp_output_file, secure: true)
     end
 
