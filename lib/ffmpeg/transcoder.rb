@@ -33,11 +33,10 @@ module FFMPEG
       # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
       @movie.check_frame_resolutions if @transcoder_options[:permit_dynamic_resolution_pre_encode]
 
-      temp_dir = ENV.fetch('TMPDIR', '/tmp')
       if requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
-          dirname = "#{temp_dir}/interim"
+          dirname = "/tmp/interim"
           unless File.directory?(dirname)
             FileUtils.mkdir_p(dirname)
           end
@@ -173,9 +172,10 @@ module FFMPEG
       pre_encode_if_necessary
       # change output file to /tmp/interim/output.mp4 needs to be unique to every run
       # get file extension from original file - dont overwrite original file
-      temp_dir = ENV.fetch('TMPDIR', '/tmp')
-      temp_output_file = "#{temp_dir}/interim/#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
+      temp_output_file = "/tmp/interim/#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
       @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
+
+      puts "Running transcoding...\n#{@command}\n"
 
       FFMPEG.logger.info("Running transcoding...\n#{@command}\n")
       @output = ""
@@ -185,6 +185,7 @@ module FFMPEG
           yield(0.0) if block_given?
           next_line = Proc.new do |line|
             fix_encoding(line)
+            puts ""
             @output << line
             if line.include?("time=")
               if line =~ /time=(\d+):(\d+):(\d+.\d+)/ # ffmpeg 0.8 and above style
