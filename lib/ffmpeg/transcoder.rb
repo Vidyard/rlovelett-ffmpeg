@@ -170,10 +170,14 @@ module FFMPEG
 
     def transcode_movie
       pre_encode_if_necessary
+      temp_dir = "/tmp/rlovelett/output/"
+      FileUtils.mkdir_p(temp_dir) unless File.directory?(temp_dir)
+      temp_output_file = "#{temp_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
 
-      @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(@output_file)}"
+      @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
 
       FFMPEG.logger.info("Running transcoding...\n#{@command}\n")
+      puts "Running transcoding...\n#{@command}\n"
       @output = ""
 
       Open3.popen3(@command) do |stdin, stdout, stderr, wait_thr|
@@ -203,6 +207,10 @@ module FFMPEG
           FFMPEG.logger.error "Process hung...\n@command\n#{@command}\nOutput\n#{@output}\n"
           raise Error, "Process hung. Full output: #{@output}"
         end
+      end
+      if File.exist?(temp_output_file)
+        FileUtils.cp(temp_output_file, @output_file)
+        FileUtils.rm_rf(temp_output_file)
       end
     end
 
