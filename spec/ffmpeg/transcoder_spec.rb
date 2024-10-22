@@ -1,4 +1,5 @@
 require 'spec_helper.rb'
+require 'fileutils'
 
 module FFMPEG
   describe Transcoder do
@@ -425,6 +426,37 @@ module FFMPEG
         transcoder = Transcoder.new(movie, output_path, EncodingOptions.new)
         allow(movie).to receive(:has_dynamic_resolution).and_return(false)
         expect(transcoder.requires_pre_encode).to be false
+      end
+    end
+
+    describe "#handle_temp_files" do
+      let(:output_path) { "#{tmp_path}/output.mp4" }
+      let(:temp_output_path) { %r{#{TEMP_DIR}/output/output_.*\.mp4} }
+
+      before do
+        allow(File).to receive(:exist?).and_call_original
+        allow(FileUtils).to receive(:cp)
+        allow(FileUtils).to receive(:rm_rf)
+      end
+
+      it "copies and deletes the temporary output file if it exists" do
+        allow(File).to receive(:exist?).with(temp_output_path).and_return(true)
+
+        transcoder = Transcoder.new(movie, output_path, EncodingOptions.new)
+        transcoder.send(:transcode_movie)
+
+        expect(FileUtils).to have_received(:cp).with(temp_output_path, output_path)
+        expect(FileUtils).to have_received(:rm_rf).with(temp_output_path)
+      end
+
+      it "does not copy or delete the temporary output file if it does not exist" do
+        allow(File).to receive(:exist?).with(temp_output_path).and_return(false)
+
+        transcoder = Transcoder.new(movie, output_path, EncodingOptions.new)
+        transcoder.send(:transcode_movie)
+
+        expect(FileUtils).not_to have_received(:cp).with(temp_output_path, output_path)
+        expect(FileUtils).not_to have_received(:rm_rf).with(temp_output_path)
       end
     end
   end

@@ -39,6 +39,7 @@ module FFMPEG
           # Make the interim path folder if it doesn't exist
 
           dirname = "#{TEMP_DIR}/interim/#{File.dirname(path)}/"
+          puts "dirname: #{dirname}"
           unless File.directory?(dirname)
             FileUtils.mkdir_p(dirname)
           end
@@ -172,10 +173,10 @@ module FFMPEG
 
     def transcode_movie
       pre_encode_if_necessary
-      temp_dir = "#{TEMP_DIR}/output/"
-      FileUtils.mkdir_p(temp_dir) unless File.directory?(temp_dir)
+      temp_output_dir = "#{TEMP_DIR}/output/"
+      FileUtils.mkdir_p(temp_output_dir) unless File.directory?(temp_output_dir)
 
-      temp_output_file = "#{temp_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
+      temp_output_file = "#{temp_output_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
 
       @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
 
@@ -216,7 +217,7 @@ module FFMPEG
       end
     ensure
       @movie.interim_paths.each do |path|
-        FileUtils.rm_rf(path) if path.start_with?("#{TEMP_DIR}")
+        FileUtils.rm_rf(path) if path.start_with?(TEMP_DIR)
       end
     end
 
