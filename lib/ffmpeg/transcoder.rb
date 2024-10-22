@@ -6,7 +6,6 @@ require 'securerandom'
 FIXED_LOWER_TO_UPPER_RATIO = 16.0/9.0
 FIXED_UPPER_TO_LOWER_RATIO = 9.0/16.0
 
-
 module FFMPEG
   class Transcoder
     @@timeout = 30
@@ -29,8 +28,6 @@ module FFMPEG
       @movie = movie
       @output_file = output_file
       @transcoder_options = transcoder_options
-
-      # self.ensure_temp_directory
 
       # If the movie has frames with varying resolutions, we need to pre-encode the movie for trims
       # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
@@ -173,9 +170,7 @@ module FFMPEG
 
     def transcode_movie
       pre_encode_if_necessary
-      # temp_dir = "/tmp/interim/"
 
-      # temp_output_file = "#{temp_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
       @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(@output_file)}"
 
       FFMPEG.logger.info("Running transcoding...\n#{@command}\n")
