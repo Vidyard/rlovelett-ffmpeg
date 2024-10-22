@@ -5,6 +5,7 @@ require 'securerandom'
 
 FIXED_LOWER_TO_UPPER_RATIO = 16.0/9.0
 FIXED_UPPER_TO_LOWER_RATIO = 9.0/16.0
+TEMP_DIR = "/tmp/rlovelett".freeze
 
 module FFMPEG
   class Transcoder
@@ -37,11 +38,11 @@ module FFMPEG
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
 
-          dirname = "/tmp/rlovelett/#{File.dirname(path)}/interim"
+          dirname = "#{TEMP_DIR}/interim/#{File.dirname(path)}/"
           unless File.directory?(dirname)
             FileUtils.mkdir_p(dirname)
           end
-          interim_path = "#{dirname}/#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
+          interim_path = "#{dirname}#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
           @movie.interim_paths << interim_path
         end
       else
@@ -171,7 +172,7 @@ module FFMPEG
 
     def transcode_movie
       pre_encode_if_necessary
-      temp_dir = "/tmp/rlovelett/output/"
+      temp_dir = "#{TEMP_DIR}/output/"
       FileUtils.mkdir_p(temp_dir) unless File.directory?(temp_dir)
 
       temp_output_file = "#{temp_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
@@ -215,8 +216,7 @@ module FFMPEG
       end
     ensure
       @movie.interim_paths.each do |path|
-        puts "path: #{path}"
-        FileUtils.rm_rf(path) if path.start_with?("/tmp/rlovelett/")
+        FileUtils.rm_rf(path) if path.start_with?("#{TEMP_DIR}")
       end
     end
 
