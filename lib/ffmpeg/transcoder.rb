@@ -6,6 +6,7 @@ require 'securerandom'
 FIXED_LOWER_TO_UPPER_RATIO = 16.0/9.0
 FIXED_UPPER_TO_LOWER_RATIO = 9.0/16.0
 
+
 module FFMPEG
   class Transcoder
     @@timeout = 30
@@ -29,7 +30,7 @@ module FFMPEG
       @output_file = output_file
       @transcoder_options = transcoder_options
 
-      self.ensure_temp_directory
+      # self.ensure_temp_directory
 
       # If the movie has frames with varying resolutions, we need to pre-encode the movie for trims
       # This is because ffmpeg can't reliably handle inputs that contain frames with differing resolutions particularly for trimming with `filter_complex`
@@ -38,7 +39,13 @@ module FFMPEG
       if requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
-          interim_path = "/tmp/#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
+
+          dirname = "/tmp/rlovelett/#{File.dirname(path)}/interim"
+          unless File.directory?(dirname)
+            FileUtils.mkdir_p(dirname)
+          end
+
+          interim_path = "#{dirname}/#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
           @movie.interim_paths << interim_path
         end
       else
@@ -60,13 +67,6 @@ module FFMPEG
       @errors = []
 
       apply_transcoder_options
-    end
-
-    def ensure_temp_directory
-      dirname = "/tmp/"
-      unless File.directory?(dirname)
-        FileUtils.mkdir_p(dirname)
-      end
     end
 
     def run(&)
@@ -174,8 +174,9 @@ module FFMPEG
 
     def transcode_movie
       pre_encode_if_necessary
+      temp_dir = "/tmp/interim/"
 
-      temp_output_file = "/tmp/#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
+      temp_output_file = "#{temp_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
       @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
 
       FFMPEG.logger.info("Running transcoding...\n#{@command}\n")
