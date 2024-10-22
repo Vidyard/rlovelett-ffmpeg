@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'open3'
 require 'shellwords'
 require 'fileutils'
@@ -5,7 +7,7 @@ require 'securerandom'
 
 FIXED_LOWER_TO_UPPER_RATIO = 16.0/9.0
 FIXED_UPPER_TO_LOWER_RATIO = 9.0/16.0
-TEMP_DIR = "/tmp/rlovelett".freeze
+TEMP_DIR = "/tmp/rlovelett"
 
 module FFMPEG
   class Transcoder
