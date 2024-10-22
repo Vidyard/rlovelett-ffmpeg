@@ -46,6 +46,7 @@ module FFMPEG
         end
       else
         @movie.interim_paths << @movie.paths
+        @movie.interim_paths.flatten!
       end
 
       if options.is_a?(String)
@@ -172,12 +173,12 @@ module FFMPEG
       pre_encode_if_necessary
       temp_dir = "/tmp/rlovelett/output/"
       FileUtils.mkdir_p(temp_dir) unless File.directory?(temp_dir)
+
       temp_output_file = "#{temp_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
 
       @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
 
       FFMPEG.logger.info("Running transcoding...\n#{@command}\n")
-      puts "Running transcoding...\n#{@command}\n"
       @output = ""
 
       Open3.popen3(@command) do |stdin, stdout, stderr, wait_thr|
@@ -211,6 +212,11 @@ module FFMPEG
       if File.exist?(temp_output_file)
         FileUtils.cp(temp_output_file, @output_file)
         FileUtils.rm_rf(temp_output_file)
+      end
+    ensure
+      @movie.interim_paths.each do |path|
+        puts "path: #{path}"
+        FileUtils.rm_rf(path) if path.start_with?("/tmp/rlovelett/")
       end
     end
 
