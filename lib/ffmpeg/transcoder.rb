@@ -44,7 +44,6 @@ module FFMPEG
           unless File.directory?(dirname)
             FileUtils.mkdir_p(dirname)
           end
-
           interim_path = "#{dirname}/#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
           @movie.interim_paths << interim_path
         end
@@ -174,10 +173,10 @@ module FFMPEG
 
     def transcode_movie
       pre_encode_if_necessary
-      temp_dir = "/tmp/interim/"
+      # temp_dir = "/tmp/interim/"
 
-      temp_output_file = "#{temp_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
-      @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
+      # temp_output_file = "#{temp_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
+      @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(@output_file)}"
 
       FFMPEG.logger.info("Running transcoding...\n#{@command}\n")
       @output = ""
@@ -210,12 +209,6 @@ module FFMPEG
           raise Error, "Process hung. Full output: #{@output}"
         end
       end
-
-      unless File.exist?(temp_output_file)
-        raise FFMPEG::Error, "no output file created"
-      end
-      FileUtils.cp(temp_output_file, @output_file)
-      FileUtils.rm_rf(temp_output_file, secure: true)
     end
 
     def validate_output_file(&block)
