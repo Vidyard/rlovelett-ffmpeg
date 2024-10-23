@@ -173,7 +173,7 @@ module FFMPEG
 
     def transcode_movie
       pre_encode_if_necessary
-      
+
       temp_output_dir = "#{TEMP_DIR}/output/"
       FileUtils.mkdir_p(temp_output_dir) unless File.directory?(temp_output_dir)
 
