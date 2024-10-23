@@ -5,6 +5,7 @@ require 'securerandom'
 
 FIXED_LOWER_TO_UPPER_RATIO = 16.0/9.0
 FIXED_UPPER_TO_LOWER_RATIO = 9.0/16.0
+TEMP_DIR = "/tmp/rlovelett".freeze
 
 module FFMPEG
   class Transcoder
@@ -36,16 +37,18 @@ module FFMPEG
       if requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
-          dirname = "#{File.dirname(path)}/interim"
+
+          dirname = "#{TEMP_DIR}/interim#{File.dirname(path)}/"
           unless File.directory?(dirname)
             FileUtils.mkdir_p(dirname)
           end
-
-          interim_path = "#{File.dirname(path)}/interim/#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
+          # Example output: /tmp/rlovelett/interim/test_gv6Hw86ryqklKNiYCu9a8w.mp4
+          interim_path = "#{dirname}#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
           @movie.interim_paths << interim_path
         end
       else
         @movie.interim_paths << @movie.paths
+        @movie.interim_paths.flatten!
       end
 
       if options.is_a?(String)
@@ -171,7 +174,14 @@ module FFMPEG
     def transcode_movie
       pre_encode_if_necessary
 
-      @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(@output_file)}"
+      temp_output_dir = "#{TEMP_DIR}/output/"
+      FileUtils.mkdir_p(temp_output_dir) unless File.directory?(temp_output_dir)
+
+      # We use a temporary output file to avoid issues with manipulating the output file directly in ffmpeg, which can occur due to s3 mountpoint restrictions.
+      # Example output: /tmp/rlovelett/output/test_gv6Hw86ryqklKNiYCu9a8w.mp4
+      temp_output_file = "#{temp_output_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
+
+      @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
 
       FFMPEG.logger.info("Running transcoding...\n#{@command}\n")
       @output = ""
@@ -203,6 +213,16 @@ module FFMPEG
           FFMPEG.logger.error "Process hung...\n@command\n#{@command}\nOutput\n#{@output}\n"
           raise Error, "Process hung. Full output: #{@output}"
         end
+      end
+
+      # Copy temp_output_file to output_file and cleanup interim paths
+      if File.exist?(temp_output_file)
+        FileUtils.cp(temp_output_file, @output_file)
+        FileUtils.rm_rf(temp_output_file)
+      end
+    ensure
+      @movie.interim_paths.each do |path|
+        FileUtils.rm_rf(path) if path.start_with?(TEMP_DIR)
       end
     end
 

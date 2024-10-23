@@ -1,4 +1,5 @@
 require 'spec_helper.rb'
+require 'fileutils'
 
 module FFMPEG
   describe Transcoder do
@@ -425,6 +426,29 @@ module FFMPEG
         transcoder = Transcoder.new(movie, output_path, EncodingOptions.new)
         allow(movie).to receive(:has_dynamic_resolution).and_return(false)
         expect(transcoder.requires_pre_encode).to be false
+      end
+    end
+
+    describe "#handle_temp_files" do
+      let(:temp_output_file) { %r{#{TEMP_DIR}/output/output_.*\.mp4} }
+      let(:output_file) { "#{tmp_path}/output.mp4" }
+      let(:interim_path) { "#{TEMP_DIR}/interim/interim_path.mp4" }
+      let(:transcoder) { Transcoder.new(movie, output_file, EncodingOptions.new) }
+
+      it 'copies the temp output file to the final output file' do
+        expect(FileUtils).to receive(:cp).with(temp_output_file, output_file)
+        transcoder.send(:transcode_movie)
+      end
+
+      it 'removes the temp output file' do
+        expect(FileUtils).to receive(:rm_rf).with(temp_output_file)
+        transcoder.send(:transcode_movie)
+      end
+
+      it 'removes interim paths' do
+        movie.interim_paths << interim_path
+        expect(FileUtils).to receive(:rm_rf).with(interim_path)
+        transcoder.send(:transcode_movie)
       end
     end
   end
