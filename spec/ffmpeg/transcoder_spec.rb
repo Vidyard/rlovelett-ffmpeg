@@ -430,33 +430,25 @@ module FFMPEG
     end
 
     describe "#handle_temp_files" do
-      let(:output_path) { "#{tmp_path}/output.mp4" }
-      let(:temp_output_path) { %r{#{TEMP_DIR}/output/output_.*\.mp4} }
+      let(:temp_output_file) { %r{#{TEMP_DIR}/output/output_.*\.mp4} }
+      let(:output_file) { "#{tmp_path}/output.mp4" }
+      let(:interim_path) { "#{TEMP_DIR}/interim/interim_path.mp4" }
+      let(:transcoder) { Transcoder.new(movie, output_file, EncodingOptions.new) }
 
-      before do
-        allow(File).to receive(:exist?).and_call_original
-        allow(FileUtils).to receive(:cp)
-        allow(FileUtils).to receive(:rm_rf)
+      it 'copies the temp output file to the final output file' do
+        expect(FileUtils).to receive(:cp).with(temp_output_file, output_file)
+        transcoder.send(:transcode_movie)
       end
 
-      it "copies and deletes the temporary output file if it exists" do
-        allow(File).to receive(:exist?).with(temp_output_path).and_return(true)
-
-        transcoder = Transcoder.new(movie, output_path, EncodingOptions.new)
+      it 'removes the temp output file' do
+        expect(FileUtils).to receive(:rm_rf).with(temp_output_file)
         transcoder.send(:transcode_movie)
-
-        expect(FileUtils).to have_received(:cp).with(temp_output_path, output_path)
-        expect(FileUtils).to have_received(:rm_rf).with(temp_output_path)
       end
 
-      it "does not copy or delete the temporary output file if it does not exist" do
-        allow(File).to receive(:exist?).with(temp_output_path).and_return(false)
-
-        transcoder = Transcoder.new(movie, output_path, EncodingOptions.new)
+      it 'removes interim paths' do
+        movie.interim_paths << interim_path
+        expect(FileUtils).to receive(:rm_rf).with(interim_path)
         transcoder.send(:transcode_movie)
-
-        expect(FileUtils).not_to have_received(:cp).with(temp_output_path, output_path)
-        expect(FileUtils).not_to have_received(:rm_rf).with(temp_output_path)
       end
     end
   end

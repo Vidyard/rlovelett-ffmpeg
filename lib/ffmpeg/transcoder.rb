@@ -38,11 +38,11 @@ module FFMPEG
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
 
-          dirname = "#{TEMP_DIR}/interim/#{File.dirname(path)}/"
-          puts "dirname: #{dirname}"
+          dirname = "#{TEMP_DIR}/interim#{File.dirname(path)}/"
           unless File.directory?(dirname)
             FileUtils.mkdir_p(dirname)
           end
+          # /tmp/rlovelett/output/test_gv6Hw86ryqklKNiYCu9a8w.mp4
           interim_path = "#{dirname}#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
           @movie.interim_paths << interim_path
         end
