@@ -42,7 +42,7 @@ module FFMPEG
           unless File.directory?(dirname)
             FileUtils.mkdir_p(dirname)
           end
-          # /tmp/rlovelett/output/test_gv6Hw86ryqklKNiYCu9a8w.mp4
+          # Example output: /tmp/rlovelett/interim/test_gv6Hw86ryqklKNiYCu9a8w.mp4
           interim_path = "#{dirname}#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
           @movie.interim_paths << interim_path
         end
@@ -176,6 +176,7 @@ module FFMPEG
       temp_output_dir = "#{TEMP_DIR}/output/"
       FileUtils.mkdir_p(temp_output_dir) unless File.directory?(temp_output_dir)
 
+      # Example output: /tmp/rlovelett/output/test_gv6Hw86ryqklKNiYCu9a8w.mp4
       temp_output_file = "#{temp_output_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
 
       @command = "#{@movie.ffmpeg_command} -y #{@raw_options} #{Shellwords.escape(temp_output_file)}"
