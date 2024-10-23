@@ -177,6 +177,7 @@ module FFMPEG
       temp_output_dir = "#{TEMP_DIR}/output/"
       FileUtils.mkdir_p(temp_output_dir) unless File.directory?(temp_output_dir)
 
+      # We use a temporary output file to avoid issues with manipulating the output file directly in ffmpeg, which can occur due to s3 mountpoint restrictions.
       # Example output: /tmp/rlovelett/output/test_gv6Hw86ryqklKNiYCu9a8w.mp4
       temp_output_file = "#{temp_output_dir}#{File.basename(@output_file, File.extname(@output_file))}_#{SecureRandom.urlsafe_base64}#{File.extname(@output_file)}"
 
@@ -213,6 +214,8 @@ module FFMPEG
           raise Error, "Process hung. Full output: #{@output}"
         end
       end
+
+      # Copy temp_output_file to output_file and cleanup interim paths
       if File.exist?(temp_output_file)
         FileUtils.cp(temp_output_file, @output_file)
         FileUtils.rm_rf(temp_output_file)
