@@ -2,7 +2,6 @@ require 'open3'
 require 'shellwords'
 require 'fileutils'
 require 'securerandom'
-require 'digest'
 
 FIXED_LOWER_TO_UPPER_RATIO = 16.0/9.0
 FIXED_UPPER_TO_LOWER_RATIO = 9.0/16.0
