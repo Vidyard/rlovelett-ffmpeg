@@ -37,8 +37,11 @@ module FFMPEG
       if requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
-
-          dirname = "#{TEMP_DIR}/interim#{File.dirname(path)}/"
+          if path.start_with?("http")
+            dirname = "#{TEMP_DIR}/interim/#{SecureRandom.urlsafe_base64}/"
+          else
+            dirname = "#{TEMP_DIR}/interim#{File.dirname(path)}/"
+          end
           unless File.directory?(dirname)
             FileUtils.mkdir_p(dirname)
           end
