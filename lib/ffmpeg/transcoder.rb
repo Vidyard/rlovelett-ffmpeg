@@ -26,7 +26,6 @@ module FFMPEG
     end
 
     def initialize(movie, output_file, options = EncodingOptions.new, transcoder_options = {}, transcoder_prefix_options = {})
-      puts "|| rlovelett || initialize || #{movie.paths.inspect}"
       @movie = movie
       @output_file = output_file
       @transcoder_options = transcoder_options
@@ -38,12 +37,9 @@ module FFMPEG
       if requires_pre_encode
         @movie.paths.each do |path|
           # Make the interim path folder if it doesn't exist
-
           if path.start_with?("http")
             dirname = "#{TEMP_DIR}/interim/#{SecureRandom.urlsafe_base64}/"
-            puts "|| rlovelett using random interim directory for HTTP URL #{dirname}"
           else
-            puts "|| rlovelett using local directory for local file #{dirname}"
             dirname = "#{TEMP_DIR}/interim#{File.dirname(path)}/"
           end
           unless File.directory?(dirname)
