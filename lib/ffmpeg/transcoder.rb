@@ -47,7 +47,6 @@ module FFMPEG
           end
           # Example output: /tmp/rlovelett/interim/test_gv6Hw86ryqklKNiYCu9a8w.mp4
           interim_path = "#{dirname}#{File.basename(path, File.extname(path))}_#{SecureRandom.urlsafe_base64}.mp4"
-          puts "|| rlovelett interim path #{interim_path}"
           @movie.interim_paths << interim_path
         end
       else
