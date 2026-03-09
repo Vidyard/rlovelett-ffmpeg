@@ -160,8 +160,14 @@ module FFMPEG
 
     def determine_audio_for_pre_encode(path)
       local_movie = Movie.new(path)
-      # If there's a local audio stream, use that
-      return '-map "0:a"' if local_movie.audio_streams.any?
+      # If there's a local audio stream, use that. Map only decodable streams explicitly -
+      # using -map "0:a" would include APAC (Apple Positional Audio Codec) from iPhone
+      # spatial audio, which FFmpeg cannot decode. audio_streams already excludes these.
+      if local_movie.audio_streams.any?
+        puts "|| local_movie.audio_streams: #{local_movie.audio_streams}"
+        puts "|| local_movie.audio_streams inspect: #{local_movie.audio_streams.inspect}"
+        return local_movie.audio_streams.map { |s| "-map \"0:#{s[:index]}\"" }.join(' ')
+      end
       # Otherwise, use a silent audio source
       # | aevalsrc=0 will generate a silent audio source
       # | -shortest will make sure that the output is the duration of the shortest input (meaning the real source input)

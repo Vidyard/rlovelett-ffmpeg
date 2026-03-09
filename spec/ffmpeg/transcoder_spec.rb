@@ -348,7 +348,8 @@ module FFMPEG
           transcoder = Transcoder.new(movie_with_multiple_dimension_inputs, output_path, EncodingOptions.new)
 
           expect(Open3).to receive(:popen3).exactly(2).times # prevent ffprobe calls from being evaluated (check_frame_resolutions)
-          expect(Open3).to receive(:popen3).twice.with match(/.*\[0\:v\]scale\=854\:480.*pad\=854\:480\:\(ow\-iw\)\/2\:\(oh\-ih\)\/2\:color\=black.*\-map \"0\:a\".*/)
+          # Maps decodable audio streams by index (excludes APAC); awesome_widescreen has 1 audio stream
+          expect(Open3).to receive(:popen3).twice.with match(/.*\[0\:v\]scale\=854\:480.*pad\=854\:480\:\(ow\-iw\)\/2\:\(oh\-ih\)\/2\:color\=black.*\-map \"0\:\d+\".*/)
 
           transcoder.send(:pre_encode_if_necessary)
         end
@@ -360,7 +361,8 @@ module FFMPEG
           # Match silent audio fill
           expect(Open3).to receive(:popen3).once.with match(/.*\[0\:v\]scale\=960\:540.*pad\=960\:540\:\(ow\-iw\)\/2\:\(oh\-ih\)\/2\:color\=black.*\-map \"\[a\]\".*/)
           # Retain "real" audio
-          expect(Open3).to receive(:popen3).once.with match(/.*\[0\:v\]scale\=960\:540.*pad\=960\:540\:\(ow\-iw\)\/2\:\(oh\-ih\)\/2\:color\=black.*\-map \"0\:a\".*/)
+          # Retain "real" audio - maps decodable audio streams by index
+          expect(Open3).to receive(:popen3).once.with match(/.*\[0\:v\]scale\=960\:540.*pad\=960\:540\:\(ow\-iw\)\/2\:\(oh\-ih\)\/2\:color\=black.*\-map \"0\:\d+\".*/)
 
           transcoder.send(:pre_encode_if_necessary)
         end
