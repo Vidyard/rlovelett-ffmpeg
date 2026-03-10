@@ -249,6 +249,35 @@ module FFMPEG # rubocop:todo Metrics/ModuleLength
         end
       end
 
+      context "given an iPhone recording with an APAC (Apple Positional Audio Codec) stream" do
+        before(:each) do
+          fake_stdout = File.read("#{fixture_path}/outputs/file_with_apac_audio.txt")
+          spawn_double = double(:out => fake_stdout, :err => '')
+          expect(POSIX::Spawn::Child).to receive(:new).and_return(spawn_double)
+          @movie = Movie.new(__FILE__)
+        end
+
+        it "should be valid" do
+          expect(@movie).to be_valid
+        end
+
+        it "should only include the decodable AAC audio stream" do
+          expect(@movie.audio_streams.length).to eq(1)
+          expect(@movie.audio_streams[0][:codec_name]).to eq('aac')
+        end
+
+        it "should not include the APAC stream in audio_streams" do
+          apac_stream = @movie.audio_streams.find { |s| s[:codec_name] == 'none' }
+          expect(apac_stream).to be_nil
+        end
+
+        it "should set audio properties from the AAC stream" do
+          expect(@movie.audio_codec).to eq('aac')
+          expect(@movie.audio_channels).to eq(2)
+          expect(@movie.audio_sample_rate).to eq(48000)
+        end
+      end
+
       context "given an awesome movie file" do
         before(:all) do
           @movie = Movie.new("#{fixture_path}/movies/awesome movie.mov")

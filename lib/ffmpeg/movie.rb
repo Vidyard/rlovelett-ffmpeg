@@ -62,7 +62,8 @@ module FFMPEG
         @duration = 0
       else
         video_streams = metadata[:streams].select { |stream| stream.key?(:codec_type) and stream[:codec_type] === 'video' }
-        audio_streams = metadata[:streams].select { |stream| stream.key?(:codec_type) and stream[:codec_type] === 'audio' }
+        audio_streams = metadata[:streams].select { |stream| stream.key?(:codec_type) and stream[:codec_type] === 'audio' and stream[:codec_name] and stream[:codec_name] != 'none' }
+
         data_streams = metadata[:streams].select { |stream| stream.key?(:codec_type) and stream[:codec_type] === 'data' }
 
         @container = metadata[:format][:format_name]
