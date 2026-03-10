@@ -164,8 +164,6 @@ module FFMPEG
       # using -map "0:a" would include APAC (Apple Positional Audio Codec) from iPhone
       # spatial audio, which FFmpeg cannot decode. audio_streams already excludes these.
       if local_movie.audio_streams.any?
-        puts "|| local_movie.audio_streams: #{local_movie.audio_streams}"
-        puts "|| local_movie.audio_streams inspect: #{local_movie.audio_streams.inspect}"
         return local_movie.audio_streams.map { |s| "-map \"0:#{s[:index]}\"" }.join(' ')
       end
       # Otherwise, use a silent audio source

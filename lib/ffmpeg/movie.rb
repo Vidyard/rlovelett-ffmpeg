@@ -63,10 +63,7 @@ module FFMPEG
       else
         video_streams = metadata[:streams].select { |stream| stream.key?(:codec_type) and stream[:codec_type] === 'video' }
         audio_streams = metadata[:streams].select { |stream| stream.key?(:codec_type) and stream[:codec_type] === 'audio' and stream[:codec_name] }
-        # Filter out audio streams with unknown/unsupported codecs (codec_name 'none'), such as Apple
-        # Positional Audio Codec (APAC) found in iPhone recordings. FFmpeg has no decoder for these
-        # streams, which would cause encoding failures when they are mapped for output.
-        audio_streams = audio_streams.reject { |stream| stream[:codec_name] == 'none' }
+
         data_streams = metadata[:streams].select { |stream| stream.key?(:codec_type) and stream[:codec_type] === 'data' }
 
         @container = metadata[:format][:format_name]
